@@ -3,14 +3,17 @@
 
 #include "xfun.h"
 #include "parameters.h"
+#include <vector>
+
+using std::vector;
 
 struct counterParties {
 	double hazardRate;
 	double netDeal;
 };
 
-void setupCounterparties(counterParties *cp);
-void allocateDeals(counterParties *cp);
+void setupCounterparties(vector<counterParties>& cp);
+void allocateDeals(vector<counterParties>& cp);
 
 //returns a random deal within the range, can be positive or negative
 long getRandomDeal();

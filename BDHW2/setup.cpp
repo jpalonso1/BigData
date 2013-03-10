@@ -1,6 +1,6 @@
 #include "setup.h"
 
-void setupCounterparties(counterParties *cp) {
+void setupCounterparties(vector<counterParties>& cp) {
 	//DESC: initialize counterparties with predefined hazard rates
 	int partiesFifth = PARTIES_NUM / 5;
 	for (int j = 0; j < 5; j++) {
@@ -13,7 +13,7 @@ void setupCounterparties(counterParties *cp) {
 	}
 }
 
-void allocateDeals(counterParties *cp) {
+void allocateDeals(vector<counterParties>& cp) {
 	//allocate at least one deal to each counterparty
 	for (int i = 0; i < PARTIES_NUM; i++) {
 		cp[i].netDeal = getRandomDeal();
