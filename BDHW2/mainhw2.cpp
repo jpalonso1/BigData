@@ -14,6 +14,18 @@
 
 using namespace std;
 
+__host__ __device__
+unsigned int hash(unsigned int a)
+{
+    a = (a+0x7ed55d16) + (a<<12);
+    a = (a^0xc761c23c) ^ (a>>19);
+    a = (a+0x165667b1) + (a<<5);
+    a = (a+0xd3a2646c) ^ (a<<9);
+    a = (a+0xfd7046c5) + (a<<3);
+    a = (a^0xb55a4f09) ^ (a>>16);
+    return a;
+}
+
 struct path_generation
 {
 	const int steps;
@@ -30,7 +42,7 @@ struct path_generation
 		float normal=0;
 		//check for seed number?
 		//move outside struct to avoid duplicates?
-		thrust::random::minstd_rand rng;
+		thrust::random::minstd_rand rng(x);
 		//thrust::random::experimental::normal_distribution<float> dist(2.0, 3.5);
 		thrust::uniform_real_distribution<float> dist(0,1.0);
 		double PI=3.14159265359;
@@ -38,21 +50,20 @@ struct path_generation
 		{
 			//use box-muller to get a normal (Thrust normal is not working)
 			normal=(1/sqrt(2.0*dist(rng)))*cos(2*PI*dist(rng));
-			cout<<normal<<endl;
 			current=current+current*normal*factor;
 			average+=current/double(steps);
 		}
-    	cout<<"interm average: "<<average<<endl;
+//    	cout<<"interm average: "<<average<<endl;
 		return average;
     }
 };
 
 double genPaths(long _steps,double _initial,double _factor)
-//		thrust::device_vector<float>& X)
 {
 	thrust::device_vector<double> X(NUM_SIMULATIONS);
 	double average=0;
     thrust::plus<double> binary_op;
+    thrust::sequence(X.begin(), X.end());
     return thrust::transform_reduce(X.begin(), X.end(),path_generation(_steps,_initial,_factor),average,binary_op);
 }
 
@@ -65,7 +76,7 @@ int main(){
 	double factor=sqrt(VARIANCE)*(YEARS/double(NUM_TIMESTEPS));
 
 	double average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor);
-	cout<<"average: "<<average;
+	cout<<"average: "<<(average/NUM_SIMULATIONS);
 
 	cout<<"ending..."<<endl;
 
