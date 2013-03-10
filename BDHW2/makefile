@@ -3,22 +3,15 @@ XTOOLSDIR= ../XTools
 INCLUDES=-I. -I$(XTOOLSDIR)
 
 #set up compiler and options
-CXX = g++
-CXXFLAGS = -c -Wall $(INCLUDES)
-LDFLAGS= 
+CXX = nvcc
+CXXFLAGS = $(INCLUDES) -Xcompiler -fopenmp -DTHRUST_DEVICE_BACKEND=THRUST_DEVICE_BACKEND_OMP -lgomp
 
-SRC = mainhw2.cpp ../XTools/XLog.cpp
-OBJ=$(SRC:%.cpp=%.o)
+SRC=mainhw2.cpp ../XTools/xfun.cpp setup.cpp
 
 EXEC=base
 
-all: $(SRC) $(EXEC)
-
-$(EXEC):$(OBJ)
-	$(CXX) $(LDFLAGS) $(OBJ) -o $@ 
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) $< -o $@
+$(EXEC):
+	$(CXX) -o $@ $(SRC) $(CXXFLAGS)
         
 clean:
-	rm -f $(OBJ)
+	rm -f $(EXEC)

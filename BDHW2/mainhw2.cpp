@@ -1,51 +1,75 @@
 #include "parameters.h"
 #include "setup.h"
 
-//#include <thrust/device_vector.h>
-//#include <thrust/transform.h>
-//#include <thrust/sequence.h>
-//#include <thrust/copy.h>
-//#include <thrust/fill.h>
-//#include <thrust/replace.h>
-//#include <thrust/functional.h>
+#include <thrust/device_vector.h>
+#include <thrust/transform.h>
+#include <thrust/sequence.h>
+#include <thrust/copy.h>
+#include <thrust/fill.h>
+#include <thrust/replace.h>
+#include <thrust/functional.h>
+#include <thrust/random.h>
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/normal_distribution.h>
 
 using namespace std;
 
-//struct saxpy_functor
-//{
-//    const float a;
-//
-//    saxpy_functor(float _a) : a(_a) {}
-//
-//    __host__ __device__
-//        float operator()(const float& x, const float& y) const {
-//            return a * x + y;
-//        }
-//};
-//
-//void saxpy_fast(float A, thrust::device_vector<float>& X, thrust::device_vector<float>& Y)
-//{
-//    // Y <- A * X + Y
-//    thrust::transform(X.begin(), X.end(), Y.begin(), Y.begin(), saxpy_functor(A));
-//}
-//
-//void wdasd(float A, thrust::device_vector<float>& X, thrust::device_vector<float>& Y)
-//{
-//    // Y <- A * X + Y
-//    thrust::transform(X.begin(), X.end(), Y.begin(), Y.begin(), saxpy_functor(A));
-//}
+struct path_generation
+{
+	const int steps;
+	const double initial;
+	const double factor;
+
+    path_generation(int _steps,double _initial,double _factor)
+    : steps(_steps),initial(_initial),factor(_factor) {}
+
+    __host__ __device__
+	double operator()(const double& x) const {
+    	double average=0;
+		double current=initial;
+		float normal=0;
+		//check for seed number?
+		//move outside struct to avoid duplicates?
+		thrust::random::minstd_rand rng;
+		//thrust::random::experimental::normal_distribution<float> dist(2.0, 3.5);
+		thrust::uniform_real_distribution<float> dist(0,1.0);
+		double PI=3.14159265359;
+		for (int i=0;i<steps;i++)
+		{
+			//use box-muller to get a normal (Thrust normal is not working)
+			normal=(1/sqrt(2.0*dist(rng)))*cos(2*PI*dist(rng));
+			cout<<normal<<endl;
+			current=current+current*normal*factor;
+			average+=current/double(steps);
+		}
+    	cout<<"interm average: "<<average<<endl;
+		return average;
+    }
+};
+
+double genPaths(long _steps,double _initial,double _factor)
+//		thrust::device_vector<float>& X)
+{
+	thrust::device_vector<double> X(NUM_SIMULATIONS);
+	double average=0;
+    thrust::plus<double> binary_op;
+    return thrust::transform_reduce(X.begin(), X.end(),path_generation(_steps,_initial,_factor),average,binary_op);
+}
+
 
 int main(){
 	cout<<"starting..."<<endl;
 	counterParties cp[PARTIES_NUM];
 	setupCounterparties(cp);
 	allocateDeals(cp);
-	for (int i=0;i<PARTIES_NUM;i++)
-	{
-		cout<<cp[i].netDeal<<endl;
-	}
+	double factor=sqrt(VARIANCE)*(YEARS/double(NUM_TIMESTEPS));
+
+	double average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor);
+	cout<<"average: "<<average;
 
 	cout<<"ending..."<<endl;
+
+
 
 	return 0;
 }

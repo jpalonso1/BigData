@@ -27,7 +27,7 @@ void allocateDeals(counterParties *cp) {
 }
 
 long getRandomAllocation() {
-	//DESC: Get a random counter party number (based on predefined allocations)
+
 	//get a number between 0 and 30
 	int numAlloc = rand() % 31;
 	//define the target
@@ -41,7 +41,7 @@ long getRandomAllocation() {
 }
 
 long getRandomDeal() {
-	//DESC: Returns a random deal within the range, can be positive or negative
+
 	//get absolute value of deal
 	long deal = MIN_DEAL + xfun::randomUniform() * (MAX_DEAL - MIN_DEAL);
 	//adjust if short
