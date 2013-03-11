@@ -4,10 +4,10 @@
 
 //#include <thrust/fill.h>
 //#include <cuda.h>
-//#include <thrust/device_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/sequence.h>
 //#include <thrust/random.h>
 //#include <thrust/transform.h>
-//#include <thrust/sequence.h>
 //#include <thrust/host_vector.h>
 //#include <thrust/copy.h>
 //#include <thrust/fill.h>
@@ -67,18 +67,19 @@ using namespace std;
 //    }
 //};
 
-//double genPaths(long _steps,double _initial,double _factor,vector<counterParties>& cp)
-//{
-//	thrust::device_vector<double> X(NUM_SIMULATIONS);
-//	thrust::device_vector<counterParties> dcp(cp.begin(),cp.end());
-//
-//	counterParties *raw_ptr = thrust::raw_pointer_cast(&dcp[0]);
-//
-//	double average=0;
-//    thrust::plus<double> binary_op;
-//    thrust::sequence(X.begin(), X.end());
+double genPaths(long _steps,double _initial,double _factor,vector<counterParties>& cp)
+{
+	thrust::device_vector<double> X(NUM_SIMULATIONS);
+	thrust::device_vector<counterParties> dcp(cp.begin(),cp.end());
+
+	counterParties *raw_ptr = thrust::raw_pointer_cast(&dcp[0]);
+
+	double average=0;
+    thrust::plus<double> binary_op;
+    thrust::sequence(X.begin(), X.end());
 //    return thrust::transform_reduce(X.begin(), X.end(),path_generation(_steps,_initial,_factor,raw_ptr),average,binary_op);
-//}
+    return 1;
+}
 
 int main(){
 	cout<<"starting..."<<double(clock()) / double(CLOCKS_PER_SEC)<<endl;
@@ -89,8 +90,8 @@ int main(){
 
 	double factor=sqrt(VARIANCE)*(YEARS/double(NUM_TIMESTEPS));
 
-//	double average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor,cp);
-//	cout<<"average: "<<(average/NUM_SIMULATIONS)<<endl;
+	double average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor,cp);
+	cout<<"average: "<<(average/NUM_SIMULATIONS)<<endl;
 
 	cout<<"ending..."<<double(clock()) / double(CLOCKS_PER_SEC)<<endl;
 
