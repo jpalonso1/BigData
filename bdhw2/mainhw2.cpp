@@ -16,15 +16,15 @@
 
 using namespace std;
 
-struct path_generation
-{
-	const int steps;
-	const double initial;
-	const double factor;
-	const counterParties* cp;
-
-    path_generation(int _steps,double _initial,double _factor,counterParties *_cp)
-    : steps(_steps),initial(_initial),factor(_factor),cp(_cp) {}
+//struct path_generation
+//{
+//	const int steps;
+//	const double initial;
+//	const double factor;
+//	const counterParties* cp;
+//
+//    path_generation(int _steps,double _initial,double _factor,counterParties *_cp)
+//    : steps(_steps),initial(_initial),factor(_factor),cp(_cp) {}
 
 //    __host__ __device__
 //	double operator()(const double& x) const {
