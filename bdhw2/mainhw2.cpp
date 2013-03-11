@@ -2,19 +2,17 @@
 #include "setup.h"
 #include <vector>
 
-#include <thrust/fill.h>
-#include <cuda.h>
+//#include <thrust/fill.h>
+//#include <cuda.h>
 #include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/transform.h>
-#include <thrust/sequence.h>
-#include <thrust/copy.h>
-#include <thrust/fill.h>
-#include <thrust/replace.h>
-#include <thrust/functional.h>
 #include <thrust/random.h>
-#include <thrust/random/linear_congruential_engine.h>
-#include <thrust/random/normal_distribution.h>
+#include <thrust/transform.h>
+//#include <thrust/host_vector.h>
+#include <thrust/sequence.h>
+//#include <thrust/copy.h>
+//#include <thrust/fill.h>
+//#include <thrust/replace.h>
+//#include <thrust/functional.h>
 
 using namespace std;
 

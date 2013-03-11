@@ -16,7 +16,7 @@ const double STARTING_PRICE = 1.4;
 const double VARIANCE=0.2;
 const double DISCOUNT=0.06;
 const long NUM_TIMESTEPS = 1000;
-const long NUM_SIMULATIONS = 1200;
+const long NUM_SIMULATIONS = 120;
 const double YEARS = 5;
 const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 
