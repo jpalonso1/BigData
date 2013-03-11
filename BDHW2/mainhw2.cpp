@@ -2,10 +2,8 @@
 #include "setup.h"
 #include <vector>
 
-#include <thrust/device_ptr.h>
 #include <thrust/fill.h>
 #include <cuda.h>
-#include <cuda_runtime_api.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/transform.h>
@@ -54,9 +52,10 @@ struct path_generation
 			tempCVA=0;
 			for (int j=0;j<PARTIES_NUM;j++)
 			{
-				tempCVA+=((1.0/exp(cp[j].hazardRate*time))-(1.0/exp(cp[j].hazardRate*(time-timeStep))))*
+//				cout<<cp[j].netDeal<<endl;
+				CVA+=((1.0/exp(cp[j].hazardRate*time))-(1.0/exp(cp[j].hazardRate*(time-timeStep))))*
 						cp[j].netDeal*current;
-				CVA+=cp[j].netDeal/PARTIES_NUM;
+//				CVA+=cp[j].netDeal/PARTIES_NUM;
 //				double exposure=current;
 //				defCurr=exp(-cp[i].hazardRate*time);
 //				cp[i].CVAVal+=(defCurr-defLast)*exposure*exp(-time*DISCOUNT);
@@ -64,6 +63,7 @@ struct path_generation
 			}
 			CVA+=tempCVA*(1.0/exp(time*DISCOUNT));
 		}
+		cout<<CVA<<endl;
 //    	cout<<"interm CVA: "<<CVA<<endl;
 		return CVA;
     }

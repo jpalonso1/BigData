@@ -7,8 +7,8 @@
 #include <ctime>
 #include <cmath>
 
-const long DEALS_NUM = 12000000;
-const long PARTIES_NUM = 1200;
+const long DEALS_NUM = 100000000;
+const long PARTIES_NUM = 10000;
 const long MIN_DEAL = 8000000;
 const long MAX_DEAL = 12000000;
 const double PERCENT_LONG = 0.6;
