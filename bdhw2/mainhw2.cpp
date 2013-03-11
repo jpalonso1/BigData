@@ -72,11 +72,11 @@ double genPaths(long _steps,double _initial,double _factor,vector<counterParties
 	thrust::device_vector<double> X(NUM_SIMULATIONS);
 	thrust::device_vector<counterParties> dcp(cp.begin(),cp.end());
 
-	counterParties *raw_ptr = thrust::raw_pointer_cast(&dcp[0]);
-
-	double average=0;
-    thrust::plus<double> binary_op;
-    thrust::sequence(X.begin(), X.end());
+//	counterParties *raw_ptr = thrust::raw_pointer_cast(&dcp[0]);
+//
+//	double average=0;
+//    thrust::plus<double> binary_op;
+//    thrust::sequence(X.begin(), X.end());
 //    return thrust::transform_reduce(X.begin(), X.end(),path_generation(_steps,_initial,_factor,raw_ptr),average,binary_op);
     return 1;
 }
