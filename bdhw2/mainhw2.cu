@@ -71,29 +71,39 @@ using namespace std;
 struct get_CVA : public thrust::unary_function<unsigned int,float>
 {
   __host__ __device__
-  float operator()(unsigned int thread_id)
+  float operator()(unsigned int seed)
   {
     float sum = 0;
-    unsigned int N = 100; // samples per thread
-
-//    unsigned int seed = thread_id;
+    unsigned int N = NUM_SIMULATIONS; // samples per thread
 
     // seed a random number generator
-//    thrust::default_random_engine rng(seed);
+    thrust::default_random_engine rng(seed);
 
     // create a mapping from random numbers to [0,1)
-  //  thrust::uniform_real_distribution<float> u01(0,1);
+    thrust::uniform_real_distribution<float> u01(0,1);
 
-    //float timeStep=YEARS/float(NUM_TIMESTEPS);
-    //float time=0;
-    //float defProb=0;
+    float timeStep=YEARS/float(NUM_TIMESTEPS);
+    float time=0;
+    float defProb=0;
 
-    // take N samples
+    //get hazard rates array
+    float hazardRate[5];
+    for (unsigned int i=0;i<5;i++)
+    {
+    	hazardRate[i]=i*0.2;
+    }
+
+    float discount=1;
+    //run the required number of steps
     for(unsigned int i = 0; i < N; ++i)
     {
-    //	time=time+timeStep;
-//    	defProb=0.0001;
-    	sum+=2;
+    	//find default probabilities for each of the 5 types
+    	for (unsigned int i=0;i<5;i++){
+
+    	}
+        time=time+timeStep;
+        defProb=0.0001;
+        sum+=defProb;
     }
 
     // divide by N
@@ -101,16 +111,14 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
   }
 };
 
-double genPaths(float _factor,vector<counterParties>& _cp)
-{
-	thrust::host_vector<counterParties> hcp(_cp.begin(),_cp.end());
 
-	float estimate = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-	                                            thrust::counting_iterator<int>(50),
-	                                            get_CVA(),
-	                                            0.0f,
-	                                            thrust::plus<float>());
-	return estimate/50;
+float genPaths(float _factor,vector<counterParties>& _cp)
+{
+	thrust::device_vector<counterParties> dcp(_cp.begin(),_cp.end());
+
+	float CVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),0.0f,thrust::plus<float>());
+	return CVA/50;
 }
 
 

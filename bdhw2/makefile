@@ -6,7 +6,7 @@ INCLUDES=-I. -I$(XTOOLSDIR)
 CXX = nvcc
 CXXFLAGS = $(INCLUDES) 
 
-SRC=mainhw2.cpp ../xtools/xfun.cpp setup.cpp
+SRC=mainhw2.cu ../xtools/xfun.cpp setup.cpp
 
 EXEC=base
 

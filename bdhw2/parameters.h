@@ -20,4 +20,9 @@ const long NUM_SIMULATIONS = 100;
 const float YEARS = 5;
 const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 
+struct paramsTest{
+	long NUM_TIMESTEPS = 1000;
+	long NUM_SIMULATIONS = 100;
+};
+
 #endif /* PARAMETERS_H_ */
