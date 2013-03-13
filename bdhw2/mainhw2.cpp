@@ -92,8 +92,8 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
     for(unsigned int i = 0; i < N; ++i)
     {
     //	time=time+timeStep;
-    	defProb=0.0001;
-    	sum+=defProb;
+//    	defProb=0.0001;
+    	sum+=2;
     }
 
     // divide by N
@@ -106,11 +106,11 @@ double genPaths(float _factor,vector<counterParties>& _cp)
 	thrust::host_vector<counterParties> hcp(_cp.begin(),_cp.end());
 
 	float estimate = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-	                                            thrust::counting_iterator<int>(NUM_SIMULATIONS),
+	                                            thrust::counting_iterator<int>(50),
 	                                            get_CVA(),
 	                                            0.0f,
 	                                            thrust::plus<float>());
-	return estimate/NUM_SIMULATIONS;
+	return estimate/50;
 }
 
 
