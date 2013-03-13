@@ -67,10 +67,10 @@ using namespace std;
 //    }
 //};
 
-double genPaths(long _steps,double _initial,double _factor,vector<counterParties>& cp)
+double genPaths(long _steps,float _initial,float _factor,vector<counterParties>& cp)
 {
-	thrust::device_vector<double> X(NUM_SIMULATIONS);
-	thrust::device_vector<counterParties> dcp(cp.begin(),cp.end());
+	thrust::device_vector<float> X(NUM_SIMULATIONS);
+//	thrust::device_vector<counterParties> dcp(cp.begin(),cp.end());
 
 //	counterParties *raw_ptr = thrust::raw_pointer_cast(&dcp[0]);
 //
@@ -82,18 +82,18 @@ double genPaths(long _steps,double _initial,double _factor,vector<counterParties
 }
 
 int main(){
-	cout<<"starting..."<<double(clock()) / double(CLOCKS_PER_SEC)<<endl;
+	cout<<"starting..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 	vector<counterParties> cp(PARTIES_NUM);
 	setupCounterparties(cp);
 	allocateDeals(cp);
-	cout<<"Parties setup complete; "<<double(clock()) / double(CLOCKS_PER_SEC)<<endl;
+	cout<<"Parties setup complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
-	double factor=sqrt(VARIANCE)*(YEARS/double(NUM_TIMESTEPS));
+	float factor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
 
-	double average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor,cp);
+	float average=genPaths(NUM_TIMESTEPS,STARTING_PRICE,factor,cp);
 	cout<<"average: "<<(average/NUM_SIMULATIONS)<<endl;
 
-	cout<<"ending..."<<double(clock()) / double(CLOCKS_PER_SEC)<<endl;
+	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
 	return 0;
 }
