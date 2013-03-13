@@ -2,6 +2,7 @@
 #include "setup.h"
 #include <vector>
 
+//x6y
 //#include <thrust/fill.h>
 //#include <cuda.h>
 #include <thrust/device_vector.h>
