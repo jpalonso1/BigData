@@ -14,6 +14,7 @@ const long MIN_DEAL = 8000000;
 const long MAX_DEAL = 12000000;
 const float PERCENT_LONG = 0.6;
 const float STARTING_PRICE = 1.4;
+const float BASE_HAZARD=0.02;
 const float VARIANCE=0.2;
 const float DISCOUNT=0.06;
 const long NUM_TIMESTEPS = 1000;

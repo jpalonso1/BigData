@@ -69,7 +69,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float hazard[5];
 		for (int i=0;i<5;i++)
 		{
-			hazard[i]=0.2+0.2*float(i);
+			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
 		}
 
 		//run the required number of steps
