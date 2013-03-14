@@ -1,8 +1,6 @@
-#include "parameters.h"
-#include "setup.h"
+#include <string>
 #include <vector>
 
-//x6y
 #include <thrust/device_vector.h>
 #include <thrust/sequence.h>
 #include <thrust/random.h>
@@ -11,6 +9,10 @@
 #include <thrust/host_vector.h>
 #include <thrust/iterator/counting_iterator.h>
 
+#include "parameters.h"
+#include "setup.h"
+#include "xlog.h"
+//x6y
 
 using namespace std;
 
@@ -121,24 +123,41 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 }
 
 int main(){
+	XLog logMain("CVA Main");
+	logMain.log("Starting..");
 	cout<<"starting..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 	vector<counterParties> cp(PARTIES_NUM);
-	setupCounterparties(cp);
-	allocateDeals(cp);
-	cout<<"Parties setup complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
+	{
+		XLog logAlloc("Setup");
+		setupCounterparties(cp);
+		logAlloc.log("Counterparties Setup");
+		allocateDeals(cp);
+		logAlloc.log("Deal allocation complete");
+	}
 
-	counterpartyCVA cpCVA=genPaths();
+	counterpartyCVA cpCVA;
+	{
+		XLog logPath("Path simulation");
+		cpCVA=genPaths();
+	}
+
+	float totalCVA;
+	{
+		XLog logSum("Sum CVA");
+		totalCVA=getCumulativeCVA(cpCVA,cp);
+		logSum.log("total CVA:",totalCVA);
+	}
 	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
 	cout<<"Simulation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
-	for (int i=0;i<5;i++)
-	{cout<<i<<" average: "<<cpCVA.normalizedCVA[i]<<endl;}
+//	for (int i=0;i<5;i++)
+//	{cout<<i<<" average: "<<cpCVA.normalizedCVA[i]<<endl;}
 
-	float totalCVA=getCumulativeCVA(cpCVA,cp);
 	cout<<"Aggregation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 	cout<<"total CVA: "<<totalCVA;
 	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
+	logMain.log("Ending..");
 	return 0;
 }
 
