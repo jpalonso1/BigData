@@ -11,5 +11,4 @@ namespace xfun
 	double randomNormalBM();
 }
 
-
 #endif

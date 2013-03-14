@@ -117,7 +117,7 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 			sumCVA+=cpCVA.normalizedCVA[j]*cp[startCount + i].netDeal;
 		}
 	}
-	return sumCVA/5.0;
+	return sumCVA;
 }
 
 int main(){
