@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cmath>
 
+const float PI=3.14159265359;
 const long DEALS_NUM = 100000000;
 const long PARTIES_NUM = 10000;
 const long MIN_DEAL = 8000000;
@@ -16,13 +17,8 @@ const float STARTING_PRICE = 1.4;
 const float VARIANCE=0.2;
 const float DISCOUNT=0.06;
 const long NUM_TIMESTEPS = 1000;
-const long NUM_SIMULATIONS = 100;
+const long NUM_SIMULATIONS = 10000;
 const float YEARS = 5;
 const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
-
-struct paramsTest{
-	long NUM_TIMESTEPS = 1000;
-	long NUM_SIMULATIONS = 100;
-};
 
 #endif /* PARAMETERS_H_ */

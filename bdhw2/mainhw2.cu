@@ -73,7 +73,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
   __host__ __device__
   float operator()(unsigned int seed)
   {
-    float sum = 0;
+    float sumCVA = 0;
     unsigned int N = NUM_SIMULATIONS; // samples per thread
 
     // seed a random number generator
@@ -85,29 +85,28 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
     float timeStep=YEARS/float(NUM_TIMESTEPS);
     float time=0;
     float defProb=0;
+    double price=STARTING_PRICE;
 
-    //get hazard rates array
-    float hazardRate[5];
-    for (unsigned int i=0;i<5;i++)
-    {
-    	hazardRate[i]=i*0.2;
-    }
-
+    float factor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
+    float normalRandom=0;
+    float hazardRate=0.2;
     float discount=1;
     //run the required number of steps
     for(unsigned int i = 0; i < N; ++i)
     {
-    	//find default probabilities for each of the 5 types
-    	for (unsigned int i=0;i<5;i++){
-
-    	}
-        time=time+timeStep;
-        defProb=0.0001;
-        sum+=defProb;
+    	//get new price
+    	normalRandom=(1/sqrt(2.0*u01(rng)))*cos(2*PI*u01(rng));
+    	price+=price*normalRandom*factor;
+    	//find default probability
+    	defProb=exp((time+timeStep)*hazardRate)-exp(time*hazardRate);
+    	//update discount
+    	discount*=1.0/exp(DISCOUNT*timeStep);
+    	time=time+timeStep;
+        sumCVA+=defProb*discount*price;
     }
 
     // divide by N
-    return sum / N;
+    return sumCVA / N;
   }
 };
 

@@ -12,6 +12,11 @@ struct counterParties {
 	double netDeal;
 };
 
+struct sumCounter {
+	double hazardRate;
+	double netDeal;
+};
+
 void setupCounterparties(vector<counterParties>& cp);
 void allocateDeals(vector<counterParties>& cp);
 
