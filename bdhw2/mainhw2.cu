@@ -71,7 +71,7 @@ using namespace std;
 struct get_CVA : public thrust::unary_function<unsigned int,float>
 {
 	//hazard rate
-	const float hr=0.2;
+	const float hr;
 
 	//initialize
 	get_CVA(float _hr):hr(_hr){}
@@ -104,7 +104,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
 			normalRandom=(1/sqrt(2.0*u01(rng)))*cos(2*PI*u01(rng));
 			price+=price*normalRandom*factor;
 			//find default probability
-			defProb=exp((time+timeStep)*hazardRate)-exp(time*hazardRate);
+			defProb=exp(time*hr)-exp((time+timeStep)*hr);
 			//update discount
 			discount*=1.0/exp(DISCOUNT*timeStep);
 			time=time+timeStep;
@@ -112,7 +112,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
 		}
 
 		// divide by N
-		return sumCVA / N;
+		return sumCVA;
 	}
 };
 
@@ -122,10 +122,9 @@ float genPaths(float _factor,vector<counterParties>& _cp)
 	thrust::device_vector<counterParties> dcp(_cp.begin(),_cp.end());
 
 	float CVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),0.0f,thrust::plus<float>());
-	return CVA/50;
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(0.2),0.0f,thrust::plus<float>());
+	return CVA/NUM_SIMULATIONS;
 }
-
 
 int main(){
 	cout<<"starting..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
