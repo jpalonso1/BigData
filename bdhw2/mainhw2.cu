@@ -18,19 +18,19 @@ using namespace std;
 struct counterpartyCVA
 {
 	float normalizedCVA[5];
-
-//	counterpartyCVA operator+(const counterpartyCVA &cvaR)
-//	{
-//		counterpartyCVA tempCVA;
-//		for(int i=0;i<5;i++)
-//		{
-//			tempCVA.normalizedCVA[i]=normalizedCVA[i]+cvaR.normalizedCVA[i];
-//		}
-//		return tempCVA;
-//	}
-
+	//intialize counterparties and set to 0
+	__host__ __device__
+	counterpartyCVA()
+	{
+		for (int i=0;i<5;i++)
+		{
+			normalizedCVA[i]=0;
+		}
+	}
 };
 
+//operator to be called in thrust binary operation
+__host__ __device__
 counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR)
 {
 	counterpartyCVA tempCVA;
@@ -52,12 +52,9 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
-		//intialize counterparties and set to 0
+		//initialize output counterparty results
 		counterpartyCVA sumCVA;
-		for (int i=0;i<5;i++)
-		{
-			sumCVA.normalizedCVA[i]=0;
-		}
+
 		// seed a random number generator
 		thrust::default_random_engine rng(seed);
 
