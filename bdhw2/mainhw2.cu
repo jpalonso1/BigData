@@ -61,28 +61,42 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		// create a mapping from random numbers to [0,1)
 		thrust::uniform_real_distribution<float> u01(0,1);
 
+		//initialize parameters for simulation
 		float timeStep=YEARS/float(NUM_TIMESTEPS);
 		float time=0;
 		float defProb=0;
 		double price=STARTING_PRICE;
-
-		float factor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
-		float normalRandom=0;
-		;
 		float discount=1;
+
+		//factor used in random evolution of price
+		float priceFactor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
+
+		//to hold the random normal generated each step
+		float normal=0;
+
+		//initialize hazard rate factors (TO BE PARAMETRIZED?
+		float hazard[5];
+		for (int i=0;i<5;i++)
+		{
+			hazard[i]=0.2+0.2*float(i);
+		}
+
 		//run the required number of steps
+		//NOTE: TO BE OPTIMIZED
 		for(unsigned int i = 0; i < NUM_TIMESTEPS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
-			normalRandom=(1/sqrt(2.0*u01(rng)))*cos(2*PI*u01(rng));
-			price+=price*normalRandom*factor;
-			//find default probability
-			defProb=1.0f/exp((time-timeStep)*hr)-1.0f/exp(time*hr);
-			//update discount
+			normal=(1/sqrt(2.0*u01(rng)))*cos(2*PI*u01(rng));
+			price+=price*normal*priceFactor;
+			//get discount for current step
 			discount=1.0/exp(DISCOUNT*time);
-
-			sumCVA.normalizedCVA[0]+=defProb*discount*price;
+			//find default probability for each and copy result to output CVA struct
+			for (int j=0;j<5;j++)
+			{
+				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
+				sumCVA.normalizedCVA[j]+=defProb*discount*price;
+			}
 		}
 		return sumCVA;
 	}
