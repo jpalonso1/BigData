@@ -147,17 +147,7 @@ int main(){
 		totalCVA=getCumulativeCVA(cpCVA,cp);
 		logSum.log("total CVA:",totalCVA);
 	}
-	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
-	cout<<"Simulation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
-//	for (int i=0;i<5;i++)
-//	{cout<<i<<" average: "<<cpCVA.normalizedCVA[i]<<endl;}
-
-	cout<<"Aggregation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
-	cout<<"total CVA: "<<totalCVA;
-	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
-
-	logMain.log("Ending..");
 	return 0;
 }
 
