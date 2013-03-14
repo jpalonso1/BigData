@@ -14,7 +14,7 @@
 
 using namespace std;
 
-//holds the normalized simulation results for each type of counterpary
+//holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
 	float normalizedCVA[5];
@@ -22,10 +22,7 @@ struct counterpartyCVA
 	__host__ __device__
 	counterpartyCVA()
 	{
-		for (int i=0;i<5;i++)
-		{
-			normalizedCVA[i]=0;
-		}
+		for (int i=0;i<5;i++){normalizedCVA[i]=0;}
 	}
 };
 
@@ -43,12 +40,6 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 
 struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
-	//hazard rate
-	const float hr;
-
-	//initialize
-	get_CVA(float _hr):hr(_hr){}
-
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
@@ -95,7 +86,9 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 			for (int j=0;j<5;j++)
 			{
 				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
+//				cout<<j<<" defprob: "<<defProb<<" discount: "<<discount<<" price: "<<price<<endl;
 				sumCVA.normalizedCVA[j]+=defProb*discount*price;
+//				cout<<i<<" type: "<<j<<" CVA norm: "<<(defProb*discount*price)<<endl;
 			}
 		}
 		return sumCVA;
@@ -103,13 +96,28 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 };
 
 
-float genPaths(vector<counterParties>& _cp)
+counterpartyCVA genPaths()
 {
 	thrust::plus<counterpartyCVA> binary_op;
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(0.2),cpCVA,binary_op);
-	return cpCVA.normalizedCVA[0]/NUM_SIMULATIONS;
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),cpCVA,binary_op);
+	for (int i=0;i<5;i++)
+	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(NUM_SIMULATIONS);}
+	return cpCVA;
+}
+
+float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
+{
+	float sumCVA=0;
+	int partiesFifth = PARTIES_NUM / 5;
+	for (int j = 0; j < 5; j++) {
+		int startCount = partiesFifth * j;
+		for (long i = 0; i < partiesFifth; i++) {
+			sumCVA+=cpCVA.normalizedCVA[j]*cp[startCount + i].netDeal;
+		}
+	}
+	return sumCVA/5.0;
 }
 
 int main(){
@@ -119,8 +127,16 @@ int main(){
 	allocateDeals(cp);
 	cout<<"Parties setup complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
-	cout<<"average: "<<genPaths(cp)<<endl;
+	counterpartyCVA cpCVA=genPaths();
+	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
+	cout<<"Simulation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
+	for (int i=0;i<5;i++)
+	{cout<<i<<" average: "<<cpCVA.normalizedCVA[i]<<endl;}
+
+	float totalCVA=getCumulativeCVA(cpCVA,cp);
+	cout<<"Aggregation complete; "<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
+	cout<<"total CVA: "<<totalCVA;
 	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 
 	return 0;
