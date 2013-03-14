@@ -14,7 +14,34 @@
 
 using namespace std;
 
-struct get_CVA : public thrust::unary_function<unsigned int,float>
+//holds the normalized simulation results for each type of counterpary
+struct counterpartyCVA
+{
+	float normalizedCVA[5];
+
+//	counterpartyCVA operator+(const counterpartyCVA &cvaR)
+//	{
+//		counterpartyCVA tempCVA;
+//		for(int i=0;i<5;i++)
+//		{
+//			tempCVA.normalizedCVA[i]=normalizedCVA[i]+cvaR.normalizedCVA[i];
+//		}
+//		return tempCVA;
+//	}
+
+};
+
+counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR)
+{
+	counterpartyCVA tempCVA;
+	for(int i=0;i<5;i++)
+	{
+		tempCVA.normalizedCVA[i]=cvaL.normalizedCVA[i]+cvaR.normalizedCVA[i];
+	}
+	return tempCVA;
+}
+
+struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
 	//hazard rate
 	const float hr;
@@ -23,9 +50,14 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
 	get_CVA(float _hr):hr(_hr){}
 
 	__host__ __device__
-	float operator()(unsigned int seed)
+	counterpartyCVA operator()(unsigned int seed)
 	{
-		float sumCVA = 0;
+		//intialize counterparties and set to 0
+		counterpartyCVA sumCVA;
+		for (int i=0;i<5;i++)
+		{
+			sumCVA.normalizedCVA[i]=0;
+		}
 		// seed a random number generator
 		thrust::default_random_engine rng(seed);
 
@@ -53,11 +85,8 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
 			//update discount
 			discount=1.0/exp(DISCOUNT*time);
 
-			sumCVA+=defProb*discount*price;
-			//cout<<i<<" price: "<<price<<" disc: "<<discount<<" defProb: "<<defProb<<endl;
-
+			sumCVA.normalizedCVA[0]+=defProb*discount*price;
 		}
-		cout<<sumCVA<<endl;
 		return sumCVA;
 	}
 };
@@ -65,11 +94,11 @@ struct get_CVA : public thrust::unary_function<unsigned int,float>
 
 float genPaths(vector<counterParties>& _cp)
 {
-	//thrust::device_vector<counterParties> dcp(_cp.begin(),_cp.end());
-
-	float CVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(0.2),0.0f,thrust::plus<float>());
-	return CVA/NUM_SIMULATIONS;
+	thrust::plus<counterpartyCVA> binary_op;
+	counterpartyCVA cpCVA;
+	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(0.2),cpCVA,binary_op);
+	return cpCVA.normalizedCVA[0]/NUM_SIMULATIONS;
 }
 
 int main(){
