@@ -37,55 +37,56 @@ int main(int argc,char* argv[]){
 	string line[testCount];
 
 	//keeps track of the number of individual events found
-	long lineCount=0;
-	long noiseCount=0;
+//	long lineCount=0;
+//	long noiseCount=0;
 
-	//set array for duplicate comparisons
-	getline(input,lineChecked);
-	for (int i=0;i<testCount;i++)
 	{
-		getline(input,line[i]);
-	}
-	//reset to start of file
-	input.seekg(0);
-
-	XLog logClean("Clean and output");
-	//defines which element of the line array will be overwritten next
-	int lastArrayCheck=0;
-	while (!input.eof())
-	{
+		XLog logClean("Find Noise");
+		//set array for duplicate comparisons
 		getline(input,lineChecked);
-		lineCount++;
-		//look for each type of error
-		if (findDuplicate(lineChecked,line))
+		for (int i=0;i<testCount;i++)
 		{
-			noiseCount++;
-			noise<<lineChecked<<'\n';
+			getline(input,line[i]);
 		}
-		else if (findDatetimeNoise(lineChecked))
+		//reset to start of file
+		input.seekg(0);
+
+		//defines which element of the line array will be overwritten next
+		int lastArrayCheck=0;
+		while (!input.eof())
 		{
-			noiseCount++;
-			noise<<lineChecked<<'\n';
+			getline(input,lineChecked);
+	//		lineCount++;
+			//look for each type of error
+			if (findDuplicate(lineChecked,line))
+			{
+	//			noiseCount++;
+				noise<<lineChecked<<'\n';
+			}
+			else if (findDatetimeNoise(lineChecked))
+			{
+	//			noiseCount++;
+				noise<<lineChecked<<'\n';
+			}
+			else if (findPriceVolNoise(lineChecked))
+			{
+	//			noiseCount++;
+				noise<<lineChecked<<'\n';
+			}
+			else
+			{
+				signal<<lineChecked<<'\n';
+			}
+			//update moving array with latest line
+			line[lastArrayCheck]=lineChecked;
+			//set next element of array to be replaced
+			if (lastArrayCheck<testCount-1)lastArrayCheck++;
+			else lastArrayCheck=0;
 		}
-		else if (findPriceVolNoise(lineChecked))
-		{
-			noiseCount++;
-			noise<<lineChecked<<'\n';
-		}
-		else
-		{
-			signal<<lineChecked<<'\n';
-		}
-		//update moving array with latest line
-		line[lastArrayCheck]=lineChecked;
-		//set next element of array to be replaced
-		if (lastArrayCheck<testCount-1)lastArrayCheck++;
-		else lastArrayCheck=0;
 	}
-	logClean.log("total lines read:",lineCount);
-	logClean.log("noise found:",noiseCount);
-	clock_t timeEnd=clock();
-	cout<<endl<<"Total Runtime (see README.txt): "<<double(timeEnd)/double(CLOCKS_PER_SEC)<<" seconds";
+//	logClean.log("total lines read:",lineCount);
+//	logClean.log("noise found:",noiseCount);
+
 	return 0;
 }
 
