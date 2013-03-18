@@ -8,6 +8,7 @@
 #include <thrust/reduce.h>
 #include <thrust/host_vector.h>
 #include <thrust/iterator/counting_iterator.h>
+#include <thrust/random/normal_distribution.h>
 
 #include "parameters.h"
 #include "setup.h"
@@ -52,7 +53,8 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::default_random_engine rng(seed);
 
 		// create a mapping from random numbers to [0,1)
-		thrust::uniform_real_distribution<float> u01(0,1);
+		//thrust::uniform_real_distribution<float> u01(0,1);
+		thrust::random::experimental::normal_distribution<float> ndist(0.1f, 1.0f);
 
 		//initialize parameters for simulation
 		float timeStep=YEARS/float(NUM_TIMESTEPS);
@@ -80,7 +82,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		{
 			time=time+timeStep;
 			//get new price
-			normal=(1/sqrt(2.0*u01(rng)))*cos(2*PI*u01(rng));
+			normal=ndist(rng);
 			price+=price*normal*priceFactor;
 			//get discount for current step
 			discount=1.0/exp(DISCOUNT*time);
@@ -96,7 +98,6 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		return sumCVA;
 	}
 };
-
 
 counterpartyCVA genPaths()
 {
@@ -125,7 +126,6 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 int main(){
 	XLog logMain("CVA Main");
 	logMain.log("Starting..");
-	cout<<"starting..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
 	vector<counterParties> cp(PARTIES_NUM);
 	{
 		XLog logAlloc("Setup");

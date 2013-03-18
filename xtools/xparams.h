@@ -35,6 +35,4 @@ private:
 	void extractParams();
 };
 
-
-
 #endif /* XPARAMS_H_ */
