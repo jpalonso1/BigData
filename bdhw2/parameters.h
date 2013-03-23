@@ -7,6 +7,8 @@
 #include <ctime>
 #include <cmath>
 
+#include "xparams.h"
+
 const float PI=3.14159265359;
 const long DEALS_NUM = 100000000;
 const long PARTIES_NUM = 10000;

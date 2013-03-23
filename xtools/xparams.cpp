@@ -1,7 +1,7 @@
 #include "xparams.h"
 
-XParams::XParams(string paramPath) {
-	logFile.open(paramPath.c_str());
+XParams::XParams(const char* paramPath) {
+	logFile.open(paramPath);
 	extractParams();
 }
 
@@ -9,7 +9,7 @@ XParams::~XParams(){
 	logFile.close();
 }
 
-string XParams::seekValue(string par) {
+string XParams::seekValue(const string& par)const {
 	for (int i=0;i<name.size();i++)
 	{
 		if (par.compare(name[i]))return value[i];
