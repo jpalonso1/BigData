@@ -17,6 +17,8 @@
 
 using namespace std;
 
+__device__ long NUM_TIMESTEPS;
+
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
@@ -124,6 +126,7 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 }
 
 int main(){
+	NUM_TIMESTEPS=NUM_TIMESTEPSH;
 	XLog logMain("CVA Main");
 	logMain.log("Starting..");
 	vector<counterParties> cp(PARTIES_NUM);
