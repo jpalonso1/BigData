@@ -17,7 +17,7 @@
 
 using namespace std;
 
-__device__ long NUM_TIMESTEPS;
+__device__ parStruct parDev;
 
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
@@ -48,6 +48,10 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
+//		int testInt[par.NUM_TIMESTEPS];
+//		testInt[2]=7;
+//		cout<<testInt[2]<<endl;
+
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -69,6 +73,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float priceFactor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
 
 		//to hold the random normal generated each step
+
 		float normal=0;
 
 		//initialize hazard rate factors (TO BE PARAMETRIZED?
@@ -126,7 +131,11 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 }
 
 int main(){
-	NUM_TIMESTEPS=NUM_TIMESTEPSH;
+	parStruct parH;
+	updateParameters(parH);
+	parDev=parH;
+	cout<<parH.NUM_TIMESTEPS<<endl;
+
 	XLog logMain("CVA Main");
 	logMain.log("Starting..");
 	vector<counterParties> cp(PARTIES_NUM);

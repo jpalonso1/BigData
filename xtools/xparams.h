@@ -8,6 +8,8 @@
 #include <typeinfo>
 #include <cstdlib>
 #include <algorithm>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 using namespace std;
 
