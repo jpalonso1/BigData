@@ -26,7 +26,6 @@ public:
 	float getFloat(const string par, float def)const;
 	string getString(const string par, string def)const;
 
-
 	void printParameters()const{
 		for (int i=0;i<name.size();i++){
 			cout<<name[i]<<": "<<value[i]<<endl;

@@ -17,6 +17,7 @@ private:
 	double getTimeDiff();
 public:
 	void log(char*input);
+	void end();
 	template <class T>
 	void log(char* input,T inputT);
 	XLog(const std::string& _logName);
@@ -30,7 +31,6 @@ void XLog::log(char* input, T inputT) {
 	std::cout<<"Seconds: "<<getTimeDiff();
 	std::cout << std::scientific;
 	std::cout<<" "<<logName<<" || "<<input<<" "<<inputT<<std::endl;
-
 }
 
 #endif /* XLOG_H_ */

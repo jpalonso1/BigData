@@ -46,4 +46,3 @@ void XParams::extractParams() {
 		value.push_back(line);
 	}
 }
-

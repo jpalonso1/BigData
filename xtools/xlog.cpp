@@ -17,8 +17,11 @@ double XLog::getTimeDiff() {
 	return difference;
 }
 
+void XLog::end() {
+	log("++End");
+}
+
 XLog::~XLog(){
-	log("end");
 }
 XLog::XLog(const std::string& _logName):logName(_logName){
 	//get starting time
@@ -26,5 +29,5 @@ XLog::XLog(const std::string& _logName):logName(_logName){
 	gettimeofday(&tim,NULL);
 	timeStart=tim.tv_sec+double(tim.tv_usec)/1000000.0;
 
-	log("start");
+	log("--Start");
 }

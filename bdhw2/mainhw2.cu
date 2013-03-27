@@ -13,11 +13,11 @@
 #include "parameters.h"
 #include "setup.h"
 #include "xlog.h"
-//x6y
+//hold parameters/properties
+paramStruct parH;
+__device__ paramStruct parD;
 
 using namespace std;
-
-__device__ parStruct parDev;
 
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
@@ -131,11 +131,8 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 }
 
 int main(){
-	parStruct parH;
-	updateParameters(parH);
-	parDev=parH;
-	cout<<parH.NUM_TIMESTEPS<<endl;
-
+	parH.init();
+	parD.init();
 	XLog logMain("CVA Main");
 	logMain.log("Starting..");
 	vector<counterParties> cp(PARTIES_NUM);
