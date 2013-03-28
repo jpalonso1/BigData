@@ -137,9 +137,9 @@ inline void customGetLine(group_lines& inGroup,ifstream& inStream, long& count){
 	}
 }
 
-inline void customCopyChar(group_lines& cpyGroup,group_lines& pstGroup,long& cpyCount,long& pstCount){
+inline void customCopyChar(string cpyStr,group_lines& pstGroup,long lineNo){
 	for (int i=0;i<MAX_LINE_LENGTH;i++){
-		cpyGroup.line[pstCount][i]=cpyGroup.line[cpyCount][i];
+		pstGroup.line[lineNo][i]=cpyStr[i];
 	}
 }
 
@@ -170,29 +170,22 @@ int main(int argc,char* argv[]){
 		string lineChecked;
 		//hold object being copied
 		group_lines tempGroup[2];
+		char tempChar[MAX_LINE_LENGTH];
 		//switches between first and second temp group
 		bool fg=false;
 		XLog logRead("Read Data");
 		//start reading the file while within vector capacity
-
 		while (structsCount<NUM_GROUPS && !input.eof())
 		{
 			getline(input,lineChecked);
 			lineChecked.copy(tempGroup[fg].line[instr],MAX_LINE_LENGTH);
-//			lineChecked.copy(Hline[structsCount].line[instr],MAX_LINE_LENGTH);
-//			customGetLine(Hline[structsCount],input,instr);
-//			lineChecked=Hline[structsCount].line[instr];
-
 			if(instr>(GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE-1))
 			{
 				//copy line within duplicate range to first lines in next group
 				cpystr=instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE;
 				lineChecked.copy(tempGroup[!fg].
 						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
-//				lineChecked.copy(Hline[structsCount+1].
-//						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
-//				customCopyChar(Hline[structsCount],Hline[structsCount+1],
-//						instr,cpystr);
+
 				//reset values to start new group
 				if (instr==(GROUP_STRING_SIZE-1)){
 					Hline[structsCount]=tempGroup[fg];
@@ -207,7 +200,7 @@ int main(int argc,char* argv[]){
 				for (int i=instr+1;i<GROUP_STRING_SIZE;i++){
 					tempGroup[fg].line[i][0]='x';
 				}
-//				Hline[structsCount]=tempGroup[fg];
+				Hline[structsCount]=tempGroup[fg];
 				structsCount++;
 				break;
 			}
@@ -244,34 +237,23 @@ int main(int argc,char* argv[]){
 				else signal<<Hline[i].line[j]<<'\n';
 			}
 		}
-
-		logOutput.end();
 		//process "leftover" strings
 		for (long j=0;j<instr;j++)
 		{
 			if (Hbool[structsCount-1].lineCheck[j]==true)noise<<Hline[structsCount-1].line[j]<<'\n';
 			else signal<<Hline[structsCount-1].line[j]<<'\n';
 		}
-//		gsOut=Hstr[structsCount-1];
-//		gbOut=Hbool[structsCount-1];
-//		for (long j=0;j<instr-1;j++)
-//		{
-//			if (gbOut.lineCheck[j]==true)noise<<gsOut.line[j]<<'\n';
-//			else signal<<gsOut.line[j]<<'\n';
-//		}
-//
-//		//quick check of values
-//		group_values gsTest=Hstr[4];
-//		group_bool gbTest=Hbool[4];
-//		cout<<gbTest.lineCheck[7]<<" "<<gsTest.line[7]<<endl;;
-//
+		logOutput.end();
+
+
+		thrust::host_vector<group_bool> Hhbool(Hbool);
 		//get total noise found (optional)
 		long sum=0;
 		for(long i=0;i<structsCount+1;i++)
 		{
 			for (long j=0;j<GROUP_STRING_SIZE;j++)
 			{
-				sum+=Hbool[i].lineCheck[j];
+				sum+=Hhbool[i].lineCheck[j];
 			}
 		}
 
