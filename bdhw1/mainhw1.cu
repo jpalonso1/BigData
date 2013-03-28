@@ -91,7 +91,8 @@ struct find_noise
 		for (long i=0;i<GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE;i++)
 		{
 //			if(1==2)break;
-			if (findPriceVolNoise(gs.line[i]))output_group_bool.lineCheck[i]=true;
+			if (gs.line[i][0]=='x')break;
+			else if (findPriceVolNoise(gs.line[i]))output_group_bool.lineCheck[i]=true;
 			else if(findDatetimeNoise(gs.line[i]))output_group_bool.lineCheck[i]=true;
 			else
 			{
@@ -177,27 +178,38 @@ int main(int argc,char* argv[]){
 		while (structsCount<NUM_GROUPS && !input.eof())
 		{
 			getline(input,lineChecked);
-//			lineChecked.copy(tempGroup[fg].line[instr],MAX_LINE_LENGTH);
-			lineChecked.copy(Hline[structsCount].line[instr],MAX_LINE_LENGTH);
+			lineChecked.copy(tempGroup[fg].line[instr],MAX_LINE_LENGTH);
+//			lineChecked.copy(Hline[structsCount].line[instr],MAX_LINE_LENGTH);
 //			customGetLine(Hline[structsCount],input,instr);
+//			lineChecked=Hline[structsCount].line[instr];
 
 			if(instr>(GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE-1))
 			{
 				//copy line within duplicate range to first lines in next group
 				cpystr=instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE;
-//				lineChecked.copy(tempGroup[!fg].
-//						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
-				lineChecked.copy(Hline[structsCount+1].
+				lineChecked.copy(tempGroup[!fg].
 						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
+//				lineChecked.copy(Hline[structsCount+1].
+//						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
 //				customCopyChar(Hline[structsCount],Hline[structsCount+1],
 //						instr,cpystr);
 				//reset values to start new group
 				if (instr==(GROUP_STRING_SIZE-1)){
-//					Hline[structsCount]=tempGroup[fg];
+					Hline[structsCount]=tempGroup[fg];
 					fg=!fg;
 					structsCount++;
 					instr=DUPLICATE_ARRAY_SIZE-1;
+					if (input.eof())break;
 				}
+			}
+			//copy leftover struct and flag remainder
+			if (input.eof()){
+				for (int i=instr+1;i<GROUP_STRING_SIZE;i++){
+					tempGroup[fg].line[i][0]='x';
+				}
+//				Hline[structsCount]=tempGroup[fg];
+				structsCount++;
+				break;
 			}
 			instr++;
 		}
@@ -234,7 +246,12 @@ int main(int argc,char* argv[]){
 		}
 
 		logOutput.end();
-//		//process "leftover" strings
+		//process "leftover" strings
+		for (long j=0;j<instr;j++)
+		{
+			if (Hbool[structsCount-1].lineCheck[j]==true)noise<<Hline[structsCount-1].line[j]<<'\n';
+			else signal<<Hline[structsCount-1].line[j]<<'\n';
+		}
 //		gsOut=Hstr[structsCount-1];
 //		gbOut=Hbool[structsCount-1];
 //		for (long j=0;j<instr-1;j++)
@@ -250,7 +267,7 @@ int main(int argc,char* argv[]){
 //
 		//get total noise found (optional)
 		long sum=0;
-		for(long i=0;i<structsCount;i++)
+		for(long i=0;i<structsCount+1;i++)
 		{
 			for (long j=0;j<GROUP_STRING_SIZE;j++)
 			{
