@@ -18,6 +18,9 @@ const long MAX_LINE_LENGTH=50;
 
 using namespace std;
 
+ofstream signal;
+ofstream noise;
+
 __host__ __device__
 inline bool findPriceVolNoise(const char* lineChecked)
 {
@@ -117,31 +120,12 @@ struct find_noise
 					}
 				}
 			}
+			if (output_group_bool.lineCheck[i])noise<<gs.line[i]<<'\n';
+			else signal<<gs.line[i]<<'\n';
 		}
 		return output_group_bool;
 	}
 };
-
-inline void customGetLine(group_lines& inGroup,ifstream& inStream, long& count){
-	int i=0;
-	char tempChar='x';
-	while (1==1){
-		tempChar=inStream.get();
-		if (tempChar=='\n'){
-			inGroup.line[count][i]='\0';
-			break;
-		}
-		inGroup.line[count][i]=tempChar;
-		i++;
-		if (i==MAX_LINE_LENGTH-1)return;
-	}
-}
-
-inline void customCopyChar(string cpyStr,group_lines& pstGroup,long lineNo){
-	for (int i=0;i<MAX_LINE_LENGTH;i++){
-		pstGroup.line[lineNo][i]=cpyStr[i];
-	}
-}
 
 int main(int argc,char* argv[]){
 	//check for file name
@@ -153,8 +137,8 @@ int main(int argc,char* argv[]){
 	//ready objects for input-output
 	ifstream input(argv[1]);
 
-	ofstream signal("signal.txt");
-	ofstream noise("noise.txt");
+	signal.open("signal.txt");
+	noise.open("noise.txt");
 	//check that the entire file has been processed
 	XLog logClean("Find Noise");
 	XLog logInit("Initializing Vectors");
@@ -217,37 +201,9 @@ int main(int argc,char* argv[]){
 		cout<<"Y"<<Hline[1].line[0]<<endl;
 		cout<<"Y"<<Hline[1].line[1]<<endl;
 
-		XLog logCopy("Copy");
-//		thrust::device_vector<group_bool> Dbool(Hbool);
-//		thrust::device_vector<group_lines> Dline(Hline);
-		logCopy.end();
-
-		XLog logTransform("Transform");
+		XLog logTransform("Transform and Output");
 		thrust::transform(Hline.begin(), Hline.begin()+structsCount-1, Hbool.begin(), Hbool.begin(), find_noise());
 		logTransform.end();
-
-		XLog logBoolCopy("Copy bool");
-//		Hbool=Dbool;
-		logBoolCopy.end();
-		XLog logOutput("output to file");
-		//copy to noise and signal files
-		for (long i=0;i<structsCount-1;i++)
-		{
-			//ignore overlapping section (-DUPLICATE_ARRAY_SIZE)
-			for (long j=0;j<GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE;j++)
-			{
-				if (Hbool[i].lineCheck[j]==true)noise<<Hline[i].line[j]<<'\n';
-				else signal<<Hline[i].line[j]<<'\n';
-			}
-		}
-		//process "leftover" strings
-		for (long j=0;j<instr;j++)
-		{
-			if (Hbool[structsCount-1].lineCheck[j]==true)noise<<Hline[structsCount-1].line[j]<<'\n';
-			else signal<<Hline[structsCount-1].line[j]<<'\n';
-		}
-		logOutput.end();
-
 
 		thrust::host_vector<group_bool> Hhbool(Hbool);
 		//get total noise found (optional)
