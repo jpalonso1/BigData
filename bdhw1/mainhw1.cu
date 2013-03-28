@@ -157,8 +157,11 @@ int main(int argc,char* argv[]){
 	ofstream noise("noise.txt");
 	//check that the entire file has been processed
 	XLog logClean("Find Noise");
+	XLog logInit("Initializing Vectors");
 	thrust::host_vector<group_bool> Hbool(NUM_GROUPS);
 	thrust::host_vector<group_lines> Hline (NUM_GROUPS);
+	logInit.end();
+
 	long sectionProcessed=0;
 
 	while(!input.eof())
@@ -215,16 +218,16 @@ int main(int argc,char* argv[]){
 		cout<<"Y"<<Hline[1].line[1]<<endl;
 
 		XLog logCopy("Copy");
-		thrust::device_vector<group_bool> Dbool(Hbool);
-		thrust::device_vector<group_lines> Dline(Hline);
+//		thrust::device_vector<group_bool> Dbool(Hbool);
+//		thrust::device_vector<group_lines> Dline(Hline);
 		logCopy.end();
 
 		XLog logTransform("Transform");
-		thrust::transform(Dline.begin(), Dline.begin()+structsCount-1, Dbool.begin(), Dbool.begin(), find_noise());
+		thrust::transform(Hline.begin(), Hline.begin()+structsCount-1, Hbool.begin(), Hbool.begin(), find_noise());
 		logTransform.end();
 
 		XLog logBoolCopy("Copy bool");
-		Hbool=Dbool;
+//		Hbool=Dbool;
 		logBoolCopy.end();
 		XLog logOutput("output to file");
 		//copy to noise and signal files
