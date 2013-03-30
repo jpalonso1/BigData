@@ -12,8 +12,8 @@
 #include <thrust/device_vector.h>
 
 const long DUPLICATE_ARRAY_SIZE=60;
-const long GROUP_STRING_SIZE=1000;
-const long NUM_GROUPS=10000;
+const long GROUP_STRING_SIZE=10000;
+const long NUM_GROUPS=1000;
 const long MAX_LINE_LENGTH=50;
 
 using namespace std;
@@ -21,7 +21,20 @@ using namespace std;
 ofstream signal;
 ofstream noise;
 
-__host__ __device__
+struct group_lines{
+	char line[GROUP_STRING_SIZE][MAX_LINE_LENGTH];
+};
+
+struct group_bool{
+	bool lineCheck[GROUP_STRING_SIZE];
+	__host__ __device__
+	group_bool()
+	{
+		for (long i=0;i<GROUP_STRING_SIZE;i++){lineCheck[i]=false;}
+	}
+};
+
+__host__
 inline bool findPriceVolNoise(const char* lineChecked)
 {
 	/* Looks for specific noise in the price or volume
@@ -54,7 +67,7 @@ inline bool findPriceVolNoise(const char* lineChecked)
 	return false;
 }
 
-__host__ __device__
+__host__
 inline bool findDatetimeNoise(const char* lineChecked){
 	/* Looks for specific noise in the date or time
 	 */
@@ -72,28 +85,14 @@ inline bool findDatetimeNoise(const char* lineChecked){
 	return false;
 }
 
-struct group_lines{
-	char line[GROUP_STRING_SIZE][MAX_LINE_LENGTH];
-};
-
-struct group_bool{
-	bool lineCheck[GROUP_STRING_SIZE];
-	__host__ __device__
-	group_bool()
-	{
-		for (long i=0;i<GROUP_STRING_SIZE;i++){lineCheck[i]=false;}
-	}
-};
-
 struct find_noise
 {
-    __host__ __device__
+    __host__
     group_bool operator()(const group_lines& gs, const group_bool& gb) const {
 		group_bool output_group_bool;
 		//loop through each element of comparison array and check for match
 		for (long i=0;i<GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE;i++)
 		{
-//			if(1==2)break;
 			if (gs.line[i][0]=='x')break;
 			else if (findPriceVolNoise(gs.line[i]))output_group_bool.lineCheck[i]=true;
 			else if(findDatetimeNoise(gs.line[i]))output_group_bool.lineCheck[i]=true;
@@ -120,6 +119,7 @@ struct find_noise
 					}
 				}
 			}
+			//output to file
 			if (output_group_bool.lineCheck[i])noise<<gs.line[i]<<'\n';
 			else signal<<gs.line[i]<<'\n';
 		}
@@ -141,37 +141,37 @@ int main(int argc,char* argv[]){
 	noise.open("noise.txt");
 	//check that the entire file has been processed
 	XLog logClean("Find Noise");
-	XLog logInit("Initializing Vectors");
 	thrust::host_vector<group_bool> Hbool(NUM_GROUPS);
 	thrust::host_vector<group_lines> Hline (NUM_GROUPS);
-	logInit.end();
 
+	long totalNoise=0;
 	long sectionProcessed=0;
 
 	while(!input.eof())
 	{
-		long structsCount=0;
-		long instr=0;
-		long cpystr=0;
 		//tracks the last line
 		string lineChecked;
 		//hold object being copied
 		group_lines tempGroup[2];
-		char tempChar[MAX_LINE_LENGTH];
 		//switches between first and second temp group
 		bool fg=false;
 		XLog logRead("Read Data");
+		//track current position in arrays
+		long structsCount=0;
+		long instr=0;
+		long cpystr=0;
+		size_t len=0;
 		//start reading the file while within vector capacity
 		while (structsCount<NUM_GROUPS && !input.eof())
 		{
 			getline(input,lineChecked);
-			lineChecked.copy(tempGroup[fg].line[instr],MAX_LINE_LENGTH);
+			len=lineChecked.copy(tempGroup[fg].line[instr],MAX_LINE_LENGTH);
+			tempGroup[fg].line[instr][len]='\0';
 			if(instr>(GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE-1))
 			{
 				//copy line within duplicate range to first lines in next group
 				cpystr=instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE;
-				lineChecked.copy(tempGroup[!fg].
-						line[instr-GROUP_STRING_SIZE+DUPLICATE_ARRAY_SIZE],MAX_LINE_LENGTH);
+				lineChecked.copy(tempGroup[!fg].line[cpystr],MAX_LINE_LENGTH);
 
 				//reset values to start new group
 				if (instr==(GROUP_STRING_SIZE-1)){
@@ -184,13 +184,14 @@ int main(int argc,char* argv[]){
 			}
 			//copy leftover struct and flag remainder
 			if (input.eof()){
-				for (int i=instr+1;i<GROUP_STRING_SIZE;i++){
+				for (int i=instr;i<GROUP_STRING_SIZE;i++){
 					tempGroup[fg].line[i][0]='x';
 				}
 				Hline[structsCount]=tempGroup[fg];
 				structsCount++;
 				break;
 			}
+			//move to next line
 			instr++;
 		}
 		logRead.end();
@@ -202,25 +203,25 @@ int main(int argc,char* argv[]){
 		cout<<"Y"<<Hline[1].line[1]<<endl;
 
 		XLog logTransform("Transform and Output");
-		thrust::transform(Hline.begin(), Hline.begin()+structsCount-1, Hbool.begin(), Hbool.begin(), find_noise());
+		thrust::transform(Hline.begin(), Hline.begin()+structsCount, Hbool.begin(), Hbool.begin(), find_noise());
 		logTransform.end();
 
-		thrust::host_vector<group_bool> Hhbool(Hbool);
 		//get total noise found (optional)
 		long sum=0;
 		for(long i=0;i<structsCount+1;i++)
 		{
 			for (long j=0;j<GROUP_STRING_SIZE;j++)
 			{
-				sum+=Hhbool[i].lineCheck[j];
+				sum+=Hbool[i].lineCheck[j];
 			}
 		}
-
+		totalNoise+=sum;
 		sectionProcessed++;
 		long linesProcessed=sectionProcessed*(GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE)*NUM_GROUPS;
 		logClean.log("Processed lines up to: ",linesProcessed);
-		logClean.log("noise found:",sum);
 	}
+
+	logClean.log("Total noise found:",totalNoise);
 	logClean.end();
 	return 0;
 }
