@@ -21,13 +21,16 @@ void XLog::end() {
 	log("++End");
 }
 
+void XLog::start() {
+	log("--Start");
+}
+
 XLog::~XLog(){
 }
+
 XLog::XLog(const std::string& _logName):logName(_logName){
 	//get starting time
 	struct timeval tim;
 	gettimeofday(&tim,NULL);
 	timeStart=tim.tv_sec+double(tim.tv_usec)/1000000.0;
-
-	log("--Start");
 }

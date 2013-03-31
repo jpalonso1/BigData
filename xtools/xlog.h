@@ -18,6 +18,7 @@ private:
 public:
 	void log(char*input);
 	void end();
+	void start();
 	template <class T>
 	void log(char* input,T inputT);
 	XLog(const std::string& _logName);
