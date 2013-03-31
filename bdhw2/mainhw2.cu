@@ -13,9 +13,6 @@
 #include "parameters.h"
 #include "setup.h"
 #include "xlog.h"
-//hold parameters/properties
-paramStruct parH;
-__device__ paramStruct parD;
 
 using namespace std;
 
@@ -131,10 +128,8 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 }
 
 int main(){
-	parH.init();
-	parD.init();
 	XLog logMain("CVA Main");
-	logMain.log("Starting..");
+	logMain.start();
 	vector<counterParties> cp(PARTIES_NUM);
 	{
 		XLog logAlloc("Setup");
@@ -148,6 +143,7 @@ int main(){
 	{
 		XLog logPath("Path simulation");
 		cpCVA=genPaths();
+		logPath.end();
 	}
 
 	float totalCVA;
@@ -156,8 +152,6 @@ int main(){
 		totalCVA=getCumulativeCVA(cpCVA,cp);
 		logSum.log("total CVA:",totalCVA);
 	}
-
+	logMain.end();
 	return 0;
 }
-
-
