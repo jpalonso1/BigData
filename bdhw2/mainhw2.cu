@@ -16,6 +16,16 @@
 
 using namespace std;
 
+paramStruct initParameters(){
+	paramStruct tempPar;
+	tempPar.NUM_SIMULATIONS= param.getLong("NUM_SIMULATIONS",10000);
+	tempPar.NUM_TIMESTEPS= param.getLong("NUM_TIMESTEPS",1000);
+	return tempPar;
+}
+
+const paramStruct parh=initParameters();
+__device__ paramStruct pard;
+
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
@@ -45,10 +55,6 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
-//		int testInt[par.NUM_TIMESTEPS];
-//		testInt[2]=7;
-//		cout<<testInt[2]<<endl;
-
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -103,6 +109,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	}
 };
 
+
 counterpartyCVA genPaths()
 {
 	thrust::plus<counterpartyCVA> binary_op;
@@ -127,9 +134,15 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 	return sumCVA;
 }
 
+
+
+
 int main(){
+	pard=parh;
 	XLog logMain("CVA Main");
 	logMain.start();
+	cout<<"NUM_SIMULATIONS: "<<parh.NUM_SIMULATIONS<<endl;
+	cout<<"NUM_TIMESTEPS: "<<parh.NUM_TIMESTEPS<<endl;
 	vector<counterParties> cp(PARTIES_NUM);
 	{
 		XLog logAlloc("Setup");
