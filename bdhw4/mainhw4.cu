@@ -11,14 +11,24 @@ using namespace std;
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
-	float normalizedCVA[5];
+	float normalizedCashCVA[5];
+	float normalizedSwapFloatCVA[5][SWAP_PERIODS];
+	float normalizedSwapFixedCVA[5][SWAP_PERIODS];
 	//intialize counterparties and set to 0
 	__host__ __device__
 	counterpartyCVA()
 	{
-		for (int i=0;i<5;i++){normalizedCVA[i]=0;}
+		for (int i=0;i<5;i++){
+			normalizedCashCVA[i]=0;
+			for (int j=0;j<SWAP_PERIODS;j++){
+				normalizedSwapFloatCVA[i][j]=0;
+				normalizedSwapFixedCVA[i][j]=0;
+			}
+		}
 	}
 };
+
+
 
 int main(){
 	XLog logMain("CVA 2 Main");
@@ -33,8 +43,11 @@ int main(){
 		logAlloc.log("Deal allocation complete");
 		string cpFile("counterparties.txt");
 //		writeCounterparties(cp,cpFile);
+		saveCP(cp,"testBin",iMAX_CP_GROUP);
 		logAlloc.log("Output file");
+
 		logAlloc.end();
+
 		printCPDetails(cp[7]);
 	}
 	logMain.end();

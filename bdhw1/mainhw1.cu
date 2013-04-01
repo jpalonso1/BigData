@@ -37,8 +37,7 @@ struct group_bool{
 __host__
 inline bool findPriceVolNoise(const char* lineChecked)
 {
-	/* Looks for specific noise in the price or volume
-	 */
+	//FUN: Looks for specific noise in the price or volume
 	//parse the line being tested
 //	cout<<"line checked: "<<lineChecked<<endl;
 	bool firstComma=false;
@@ -69,8 +68,7 @@ inline bool findPriceVolNoise(const char* lineChecked)
 
 __host__
 inline bool findDatetimeNoise(const char* lineChecked){
-	/* Looks for specific noise in the date or time
-	 */
+	//FUN: Looks for specific noise in the date or time
 	//look for weekend date
 	if (lineChecked[7]=='2'){
 //		cout<<"date noise 2: "<<lineChecked<<endl;
@@ -90,6 +88,7 @@ struct find_noise
     __host__
     group_bool operator()(const group_lines& gs, const group_bool& gb) const {
 		group_bool output_group_bool;
+		//FUN: separate noise from signal and output to file
 		//loop through each element of comparison array and check for match
 		for (long i=0;i<GROUP_STRING_SIZE-DUPLICATE_ARRAY_SIZE;i++)
 		{
@@ -128,6 +127,7 @@ struct find_noise
 };
 
 inline long readData(thrust::host_vector<group_lines>& Hline,ifstream& input){
+	//FUN:extract data from stream to lines vector
 	//tracks the last line
 	string lineChecked;
 	//hold object being copied

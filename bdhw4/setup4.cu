@@ -18,8 +18,7 @@ void allocateDeals(counterParties* cp, int size) {
 	//allocate at least one deal to each counterparty
 	for (int i = 0; i < size; i++) {
 		cp[i].netCashDeal = getRandomCash();
-		cp[i].swapFixed[getRandomSwapMonth()]=getRandomSwapAmount();
-		cp[i].numSwaps++;
+		setRandomFixedSwap(cp[i]);
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
 	//assign cash deals randomly
@@ -31,8 +30,7 @@ void allocateDeals(counterParties* cp, int size) {
 	//assign swaps randomly
 	for (int i = 0; i < (SWAP_DEALS_NUM - size); i++) {
 		long partySwapAllocated = getRandomAllocation(size);
-		cp[partySwapAllocated].numSwaps++;
-		cp[partySwapAllocated].swapFixed[getRandomSwapMonth()]=getRandomSwapAmount();
+		setRandomFixedSwap(cp[partySwapAllocated]);
 	}
 }
 
@@ -54,48 +52,55 @@ long getRandomAllocation(int size) {
 //turn flag to red/green
 //using txt output vs rtd? rtd recommended
 //give partial progress on excel/time estimate?
-long getRandomCash() {
+float getRandomCash() {
 	//get absolute value of deal
-	long deal = MIN_DEAL_CASH + xfun::randomUniform() * (MAX_DEAL_CASH - MIN_DEAL_CASH);
+	float deal = MIN_DEAL_CASH + xfun::randomUniform() * (MAX_DEAL_CASH - MIN_DEAL_CASH);
 	//adjust if short
 	if (xfun::randomUniform() > PERCENT_CASH_LONG)deal = (-deal);
 	return deal;
 }
 
-long getRandomSwapAmount(){
+float getRandomSwapAmount(){
+	//FUN: returns a monthly fixed amount for the swap
 	//get absolute value of deal
 	long deal = MIN_DEAL_SWAP + xfun::randomUniform() * (MAX_DEAL_SWAP - MIN_DEAL_SWAP);
 	//adjust if eur;
 	if (xfun::randomUniform()>0.5)deal=deal/STARTING_PRICE;
 	//adjust if short
 	if (xfun::randomUniform() > PERCENT_SWAP_LONG)deal = (-deal);
-	//get fixed rate
-	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
-	//get yearly fixed amount
-
-	return deal*rate;
+	return deal;
 }
 
-long getRandomSwapMonth(){
-	return (rand() %SWAP_PERIODS);
+void setRandomFixedSwap(counterParties& cp){
+	//FUN: adds fixed payments up to a random month for input counterparty
+	int month=rand() %SWAP_PERIODS;
+	float notionalValue=getRandomSwapAmount();
+	//get fixed rate
+	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
+	float fixedMonthAmt=rate*notionalValue/12.0;
+	for (int i=0;i<month;i++){
+		cp.swapFixed[i]+=fixedMonthAmt;
+		cp.swapFloatNom[i]+=notionalValue;
+	}
+	//track total number of swaps for specific cp
+	cp.numSwaps++;
 }
 
 void writeCounterparties(counterParties* cp,string& fileName, int size){
-	std::ofstream outFile(fileName.c_str());
-	for (long i=0;i<size;i++){
-		outFile<<cp[i].hazardRate<<","<<cp[i].netCashDeal<<","<<cp[i].numSwaps;
-//		for (long j=0;j<cp[i].numSwaps;j++){
-//			outFile<<cp[i].SwapDeal[j]<<",";
-//		}
-		outFile<<'\n';
-	}
-	outFile.close();
+}
+
+void saveCP(counterParties* cp,string fileName,long size){
+	std::ofstream binFile;
+	binFile.open (fileName.c_str(), ios::out| ios::binary);
+	binFile.write ((char*)cp, size*sizeof(counterParties));
+	binFile.close();
+
 }
 
 void printCPDetails(counterParties& cp){
 	cout<<cp.hazardRate<<","<<cp.netCashDeal<<","<<cp.numSwaps<<"|";
 	for (int i=0;i<SWAP_PERIODS;i++){
-		cout<<i<<','<<cp.swapFixed[i]<<'|'<<endl;
+		cout<<i<<','<<cp.swapFixed[i]<<','<<cp.swapFloatNom[i]*DISCOUNT/12.0<<'|'<<endl;
 	}
 	cout<<endl;
 }

@@ -15,6 +15,7 @@ struct counterParties {
 	double netCashDeal;
 	//one element for each month
 	double swapFixed[SWAP_PERIODS];
+	double swapFloatNom[SWAP_PERIODS];
 	long numSwaps;
 	counterParties()
 	{
@@ -23,11 +24,10 @@ struct counterParties {
 		numSwaps=0;
 		for (int i=0;i<SWAP_PERIODS;i++){
 			swapFixed[i]=0;
+			swapFloatNom[i]=0;
 		}
 	}
 };
-
-
 
 void setupCounterparties(counterParties* cp,int size);
 void allocateDeals(counterParties* cp,int size);
@@ -38,9 +38,12 @@ void writeCounterparties(counterParties* cp,string& fileName,int size);
 long getRandomAllocation(int size);
 
 //returns a random deal within the range, can be positive or negative
-long getRandomCash();
-long getRandomSwapAmount();
-long getRandomSwapMonth();
+float getRandomCash();
+void setRandomFixedSwap(counterParties& cp);
+float getRandomSwapMthAmount();
+
+//save counterparty array to binary file
+void saveCP(counterParties* cp,string fileName,long size);
 
 //print details of a single counterparty
 void printCPDetails(counterParties& cp);

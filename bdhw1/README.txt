@@ -1,11 +1,12 @@
-Name: Scrub
+Project: Big Data Homework 1 (Scrub)
 Author: Juan Pablo Alonso
 
 This program separates noise from signal given a very specific set of conditions.
 
+EXEC: Scrub
 INPUT: 
 -1 filename (e.g. "data.txt")
--2 OPTIONAL: 'd' will provide more output details
+-2 (OPT) 'd' will provide more output details
 OUTPUT: 
 -Print to screen partial batch processing time and (OPT) read and transform times
 -file: noise.txt
