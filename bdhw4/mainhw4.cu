@@ -22,19 +22,22 @@ struct counterpartyCVA
 
 int main(){
 	XLog logMain("CVA 2 Main");
-	logMain.log("Starting..");
-	vector<counterParties> cp(PARTIES_NUM);
+	const long cpGroups=iMAX_CP_GROUP/PARTIES_NUM;
+	counterParties cp[iMAX_CP_GROUP];
 	{
 		XLog logAlloc("Setup");
-		setupCounterparties(cp);
+		logAlloc.start();
+		setupCounterparties(cp, iMAX_CP_GROUP);
 		logAlloc.log("Counterparties creation complete");
-		allocateDeals(cp);
+		allocateDeals(cp,iMAX_CP_GROUP);
 		logAlloc.log("Deal allocation complete");
 		string cpFile("counterparties.txt");
-		writeCounterparties(cp,cpFile);
+//		writeCounterparties(cp,cpFile);
 		logAlloc.log("Output file");
+		logAlloc.end();
+		printCPDetails(cp[7]);
 	}
-	cout<<"ending..."<<float(clock()) / float(CLOCKS_PER_SEC)<<endl;
+	logMain.end();
 	return 0;
 }
 
