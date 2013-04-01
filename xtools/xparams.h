@@ -32,12 +32,12 @@ public:
 		}
 	}
 private:
+
 	bool seekValue(const string& par, string & out)const;
 	fstream logFile;
 	vector<string> name;
 	vector<string> value;
 	void extractParams();
 };
-
 
 #endif /* XPARAMS_H_ */

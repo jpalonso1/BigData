@@ -9,6 +9,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/random/normal_distribution.h>
+#include <thrust/device_malloc.h>
 
 #include "parameters.h"
 #include "setup.h"
@@ -16,15 +17,14 @@
 
 using namespace std;
 
+const XParams param("paramhw2.txt");
+
 paramStruct initParameters(){
 	paramStruct tempPar;
 	tempPar.NUM_SIMULATIONS= param.getLong("NUM_SIMULATIONS",10000);
 	tempPar.NUM_TIMESTEPS= param.getLong("NUM_TIMESTEPS",1000);
 	return tempPar;
 }
-
-const paramStruct parh=initParameters();
-__device__ paramStruct pard;
 
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
@@ -52,9 +52,15 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 
 struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
+	thrust::device_ptr<paramStruct> raw_par;
+	get_CVA(thrust::device_ptr<paramStruct> _raw_par):raw_par(_raw_par){}
+
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
+		paramStruct * par = thrust::raw_pointer_cast(raw_par);
+//		paramStruct * raw_ptr = thrust::raw_pointer_cast(pardi);
+
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -109,13 +115,22 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	}
 };
 
-
 counterpartyCVA genPaths()
 {
+	paramStruct parh;
+	parh=initParameters();
+
+	thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
+	dev_ptr[0]=parh;
+//	paramStruct * par_ptr;
+//	cudaMalloc((void **) &par_ptr,sizeof(parh));
+//	cudaMemcpy(par_ptr,&parh,sizeof(parh), cudaMemcpyHostToDevice);
+//	thrust::device_ptr<paramStruct> dev_ptr(par_ptr);
+
 	thrust::plus<counterpartyCVA> binary_op;
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),cpCVA,binary_op);
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(dev_ptr),cpCVA,binary_op);
 	for (int i=0;i<5;i++)
 	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(NUM_SIMULATIONS);}
 	return cpCVA;
@@ -134,15 +149,21 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 	return sumCVA;
 }
 
-
-
-
 int main(){
-	pard=parh;
 	XLog logMain("CVA Main");
 	logMain.start();
-	cout<<"NUM_SIMULATIONS: "<<parh.NUM_SIMULATIONS<<endl;
-	cout<<"NUM_TIMESTEPS: "<<parh.NUM_TIMESTEPS<<endl;
+
+
+//	paramStruct* pard;
+//	cudaMalloc((void**)&pard,sizeof(parh));
+//	cudaMemcpy(pard,&parh,sizeof(parh),cudaMemcpyHostToDevice);
+//	thrust::device_ptr<paramStruct> dev_ptr2(pard);
+//	dev_ptr=dev_ptr2;
+
+//	thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
+//    paramStruct* pard=thrust::raw_pointer_cast(dev_ptr);
+
+//	cout<<"NUM_TIMESTEPS: "<<parh.NUM_TIMESTEPS<<endl;
 	vector<counterParties> cp(PARTIES_NUM);
 	{
 		XLog logAlloc("Setup");

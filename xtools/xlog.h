@@ -3,7 +3,7 @@
 
 #include <string>
 #include <iostream>
-#include <sstream>
+#include <cstring>
 #include <fstream>
 #include <sys/time.h>
 #include <stdio.h>
@@ -11,22 +11,26 @@
 
 class XLog {
 private:
-	std::string logName;
+	char logName[20];
 	std::ostream* logFile;
 	double timeStart;
 	double getTimeDiff();
 public:
-	void log(char*input);
+	//log single string of characters using current time
+	void log(const char*input);
+	//print end message
 	void end();
+	//print start message
 	void start();
+	//use a number or other iostream compatible argument
 	template <class T>
-	void log(char* input,T inputT);
-	XLog(const std::string& _logName);
+	void log(const char* input,T inputT);
+	XLog(const char* _logName);
     ~XLog();
 };
 
 template<class T>
-void XLog::log(char* input, T inputT) {
+void XLog::log(const char* input, T inputT) {
 	std::cout << std::fixed;
 	std::cout<<std::setprecision(3);
 	std::cout<<"Seconds: "<<getTimeDiff();
