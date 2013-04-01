@@ -4,31 +4,119 @@
 #include "parameters4.h"
 #include "setup4.h"
 #include "xlog.h"
-//x6y
+
+#include <thrust/random.h>
+#include <thrust/transform.h>
+#include <thrust/random/normal_distribution.h>
 
 using namespace std;
 
-//holds the normalized simulation results for each type of counterparty
-struct counterpartyCVA
-{
-	float normalizedCashCVA[5];
-	float normalizedSwapFloatCVA[5][SWAP_PERIODS];
-	float normalizedSwapFixedCVA[5][SWAP_PERIODS];
-	//intialize counterparties and set to 0
-	__host__ __device__
-	counterpartyCVA()
-	{
-		for (int i=0;i<5;i++){
-			normalizedCashCVA[i]=0;
-			for (int j=0;j<SWAP_PERIODS;j++){
-				normalizedSwapFloatCVA[i][j]=0;
-				normalizedSwapFixedCVA[i][j]=0;
-			}
-		}
-	}
-};
-
-
+////holds the normalized simulation results for each type of counterparty
+//struct counterpartyCVA
+//{
+//	float normalizedCashCVA[5];
+//	float normalizedSwapFloatCVA[5][SWAP_PERIODS];
+//	float normalizedSwapFixedCVA[5][SWAP_PERIODS];
+//	//intialize counterparties and set to 0
+//	__host__ __device__
+//	counterpartyCVA()
+//	{
+//		for (int i=0;i<5;i++){
+//			normalizedCashCVA[i]=0;
+//			for (int j=0;j<SWAP_PERIODS;j++){
+//				normalizedSwapFloatCVA[i][j]=0;
+//				normalizedSwapFixedCVA[i][j]=0;
+//			}
+//		}
+//	}
+//};
+//
+////operator to be called in thrust binary operation
+//__host__ __device__
+//counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR)
+//{
+//	counterpartyCVA tempCVA;
+//	for(int i=0;i<5;i++)
+//	{
+//		tempCVA.normalizedCashCVA[i]=cvaL.normalizedCashCVA[i]+cvaR.normalizedCashCVA[i];
+//		for (int j=0;j<SWAP_PERIODS;j++){
+//			tempCVA.normalizedSwapFloatCVA[i][j]=
+//					cvaL.normalizedSwapFloatCVA[i][j]+cvaR.normalizedSwapFloatCVA[i][j];
+//			tempCVA.normalizedSwapFixedCVA[i][j]=
+//					cvaL.normalizedSwapFixedCVA[i][j]+cvaR.normalizedSwapFixedCVA[i][j];
+//		}
+//	}
+//	return tempCVA;
+//}
+//
+//struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
+//{
+//	__host__ __device__
+//	counterpartyCVA operator()(unsigned int seed)
+//	{
+//		//initialize output counterparty results
+//		counterpartyCVA sumCVA;
+//
+//		// seed a random number generator
+//		thrust::default_random_engine rng(seed);
+//
+//		//Standard Normal distribution
+//		thrust::random::experimental::normal_distribution<float> ndist(0.1f, 1.0f);
+//
+//		//Normal distribution for siegel curve
+//		thrust::random::experimental::normal_distribution<float> ndistns(0, DISCOUNT);
+//
+//		//initialize parameters for simulation
+//		float timeStep=1.0/12.0;
+//		float time=LAST_YEAR;
+//		float defProb=0;
+//		double price=STARTING_PRICE;
+//
+//		//factor used in random evolution of price
+//		float priceFactor=sqrt(VARIANCE)*(timeStep);
+//
+//		//to hold the random normal generated each step for asset
+//		float normal=0;
+//		//to hold normal for NS curve
+//		float normalNS=0;
+//
+//		//initialize hazard rate factors
+//		float hazard[5];
+//		for (int i=0;i<5;i++)
+//		{
+//			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
+//		}
+//
+//		//used for nelson siegel
+//		float x0=DISCOUNT;
+//		float x1=DISCOUNT;
+//		float discount=1;
+//		float rateSD=sqrt(RATE_VARIANCE);
+//		float sqTimeStep=sqrt(timeStep);
+//		//run the required number of steps
+//		for(unsigned int i = 0; i < SWAP_PERIODS-1; ++i)
+//		{
+//			time=time+timeStep;
+//			//get new price
+//			normal=ndist(rng);
+//			price+=price*normal*priceFactor;
+//			//generate discount for current step using nelson siegel
+//			normalNS=ndistns(rng);
+//			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
+//			x0=x1;
+//			discount=discount*exp(-timeStep*x1);
+//			//find default probability for each and copy result to output CVA struct
+//			for (int j=0;j<5;j++)
+//			{
+//				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
+////				cout<<j<<" defprob: "<<defProb<<" discount: "<<discount<<" price: "<<price<<endl;
+//				sumCVA.normalizedCashCVA[j]+=defProb*discount*price;
+////				cout<<i<<" type: "<<j<<" CVA norm: "<<(defProb*discount*price)<<endl;
+//			}
+//		}
+//		return sumCVA;
+//	}
+//};
 
 int main(){
 	XLog logMain("CVA 2 Main");

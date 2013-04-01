@@ -69,7 +69,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 
 		// create a mapping from random numbers to [0,1)
 		//thrust::uniform_real_distribution<float> u01(0,1);
-		thrust::random::experimental::normal_distribution<float> ndist(0.1f, 1.0f);
+		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
 		//initialize parameters for simulation
 		float timeStep=YEARS/float(NUM_TIMESTEPS);

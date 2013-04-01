@@ -1,7 +1,5 @@
 #include "setup4.h"
 
-
-
 void setupCounterparties(counterParties * cp, int size) {
 	//DESC: initialize counterparties with predefined hazard rates
 	int partiesFifth = size / 5;
@@ -73,7 +71,7 @@ float getRandomSwapAmount(){
 
 void setRandomFixedSwap(counterParties& cp){
 	//FUN: adds fixed payments up to a random month for input counterparty
-	int month=rand() %SWAP_PERIODS;
+	int month=rand() %(SWAP_PERIODS-SWAP_START)+SWAP_START;
 	float notionalValue=getRandomSwapAmount();
 	//get fixed rate
 	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
