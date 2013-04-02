@@ -15,8 +15,8 @@ const long DEALS_NUM = 100000000;
 const long PARTIES_NUM = 10000;
 const long MIN_DEAL = 8000000;
 const long MAX_DEAL = 12000000;
-const long NUM_SIMULATIONS = 300000;
-const long NUM_TIMESTEPS = 1000;
+const long NUM_SIMULATIONS = 10000;
+const long NUM_TIMESTEPS =1000;
 
 const float PERCENT_LONG = 0.6;
 const float STARTING_PRICE = 1.4;

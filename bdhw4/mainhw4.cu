@@ -67,7 +67,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::random::experimental::normal_distribution<float> ndistns(DISCOUNT, 1.0f);
 
 		//initialize parameters for simulation
-		float timeStep=1.0/12.0;
+		float timeStep=float(YEARS)/float(SWAP_PERIODS);
 		float defProb=0;
 		double price=STARTING_PRICE;
 
@@ -95,20 +95,27 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float rateSD=sqrt(RATE_VARIANCE);
 		float sqTimeStep=sqrt(timeStep);
 		float stepDisc=0;
+		//eliminate first random number
+		normal=ndist(rng);
 		//probability of default this and last period
 		//run the required number of steps
+//		if(seed==6)cout<<"start price: "<<price<<endl;
 		for(unsigned int i = 0; i < SWAP_PERIODS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
 			normal=ndist(rng);
+//			if(i==1)cout<<"seed: "<<seed<<" normal 1: "<<normal<<endl;
+//			if(seed==7 && i==0)cout<<"price factor: "<<priceFactor<<endl;
 			price+=price*normal*priceFactor;
 			//generate discount for current step using nelson siegel
 			normalNS=ndistns(rng);
+			if (seed==8)cout<<i<<",norm: "<<normalNS<<",timest: "<<timeStep<<",";
 			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
 			x0=x1;
 			stepDisc=exp(-timeStep*x1);
 			discount=discount*stepDisc;
+			if(seed==8)cout<<i<<','<<price<<','<<x1<<','<<discount<<endl;
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
@@ -116,8 +123,9 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 //				cout<<j<<" defprob: "<<defProb<<" discount: "<<discount<<" price: "<<price<<endl;
 				sumCVA.normalizedCashCVA[j]+=defProb*discount*price;
 				sumCVA.normalizedSwapFixedCVA[j][i]=defProb*discount;
-				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc;
-//				cout<<i<<" type: "<<j<<" CVA norm: "<<(defProb*discount*price)<<endl;
+				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc*x1*1.0/12.0;
+				if(seed==10)cout<<i<<" j: "<<j<<","<<sumCVA.normalizedSwapFixedCVA[j][i]<<endl;
+
 			}
 		}
 		return sumCVA;
@@ -130,21 +138,37 @@ counterpartyCVA genPaths()
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
 			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(),cpCVA,binary_op);
-	for (int i=0;i<5;i++)
-	{cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);}
+	for (int i=0;i<5;i++){
+		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);
+		for (int j=0;j<SWAP_PERIODS;j++){
+			cpCVA.normalizedSwapFixedCVA[i][j]=cpCVA.normalizedSwapFixedCVA[i][j]/float(NUM_SIMULATIONS);
+			cpCVA.normalizedSwapFloatCVA[i][j]=cpCVA.normalizedSwapFloatCVA[i][j]/float(NUM_SIMULATIONS);
+		}
+	}
 	return cpCVA;
 }
 
 float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 {
 	float sumCVA=0;
-	int partiesFifth = PARTIES_NUM / 5;
+	float cashCVA=0;
+	float floatCVA=0;
+	float fixedCVA=0;
+	int partiesFifth = size / 5;
 	for (int j = 0; j < 5; j++) {
 		int startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
-			sumCVA+=cpCVA.normalizedCashCVA[j]*cp[startCount + i].netCashDeal;
+			cashCVA+=cpCVA.normalizedCashCVA[j]*cp[startCount + i].netCashDeal;
+			for (long k=0;k<SWAP_PERIODS;k++){
+				fixedCVA+=cpCVA.normalizedSwapFixedCVA[j][k]*cp[startCount+i].swapFixed[k];
+				floatCVA+=cpCVA.normalizedSwapFloatCVA[j][k]*cp[startCount+i].swapFloatNom[k];
+			}
 		}
 	}
+	cout<<"sum cash: "<<cashCVA<<endl;
+	cout<<"sum fixed: "<<fixedCVA<<endl;
+	cout<<"sum float: "<<floatCVA<<endl;
+	sumCVA=cashCVA+floatCVA+fixedCVA;
 	return sumCVA;
 }
 
@@ -180,5 +204,3 @@ int main(){
 	logMain.end();
 	return 0;
 }
-
-

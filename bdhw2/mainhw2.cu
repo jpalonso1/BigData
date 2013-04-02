@@ -79,11 +79,10 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float discount=1;
 
 		//factor used in random evolution of price
-		float priceFactor=sqrt(VARIANCE)*(YEARS/float(NUM_TIMESTEPS));
+		float priceFactor=sqrt(VARIANCE)*(timeStep);
 
 		//to hold the random normal generated each step
-
-		float normal=0;
+		float normal=ndist(rng);
 
 		//initialize hazard rate factors (TO BE PARAMETRIZED?
 		float hazard[5];
@@ -98,6 +97,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		{
 			time=time+timeStep;
 			//get new price
+
 			normal=ndist(rng);
 			price+=price*normal*priceFactor;
 			//get discount for current step
@@ -110,6 +110,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 				sumCVA.normalizedCVA[j]+=defProb*discount*price;
 //				cout<<i<<" type: "<<j<<" CVA norm: "<<(defProb*discount*price)<<endl;
 			}
+			normal=ndist(rng);
 		}
 		return sumCVA;
 	}
