@@ -71,7 +71,7 @@ float getRandomSwapAmount(){
 
 void setRandomFixedSwap(counterParties& cp){
 	//FUN: adds fixed payments up to a random month for input counterparty
-	int month=rand() %(SWAP_PERIODS-SWAP_START)+SWAP_START;
+	int month=rand() %(SWAP_PERIODS-SWAP_START+1)+SWAP_START;
 	float notionalValue=getRandomSwapAmount();
 	//get fixed rate
 	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
