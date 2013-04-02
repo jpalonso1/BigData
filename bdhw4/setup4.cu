@@ -1,42 +1,42 @@
 #include "setup4.h"
 
-void setupCounterparties(counterParties * cp, int size) {
+void setupCounterparties(counterParties * cp, long size) {
 	//DESC: initialize counterparties with predefined hazard rates
-	int partiesFifth = size / 5;
-	for (int j = 0; j < 5; j++) {
+	long partiesFifth = size / 5;
+	for (long j = 0; j < 5; j++) {
 		float thisHazard = 0.02 * (1 + j);
-		int startCount = partiesFifth * j;
+		long startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
 			cp[startCount + i].hazardRate = thisHazard;
 		}
 	}
 }
 
-void allocateDeals(counterParties* cp, int size) {
+void allocateDeals(counterParties* cp, long size) {
 	//allocate at least one deal to each counterparty
-	for (int i = 0; i < size; i++) {
+	for (long i = 0; i < size; i++) {
 		cp[i].netCashDeal = getRandomCash();
 		setRandomFixedSwap(cp[i]);
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
 	//assign cash deals randomly
-	for (int i = 0; i < (CASH_DEALS_NUM - size); i++) {
+	for (long i = 0; i < (CASH_DEALS_NUM - size); i++) {
 		long partyCashAllocated = getRandomAllocation(size);
 		cp[partyCashAllocated].netCashDeal += getRandomCash();
 	}
 
 	//assign swaps randomly
-	for (int i = 0; i < (SWAP_DEALS_NUM - size); i++) {
+	for (long i = 0; i < (SWAP_DEALS_NUM - size); i++) {
 		long partySwapAllocated = getRandomAllocation(size);
 		setRandomFixedSwap(cp[partySwapAllocated]);
 	}
 }
 
-long getRandomAllocation(int size) {
+long getRandomAllocation(long size) {
 	//get a number between 0 and 30
-	int numAlloc = rand() % 31;
+	long numAlloc = rand() % 31;
 	//define the target
-	for (int i = 0; i < 5; i++) {
+	for (long i = 0; i < 5; i++) {
 		if (numAlloc < PROP_CUTOFF[i]) {
 			return ((size / 5) * i) + rand() % (size / 5);
 		}
@@ -71,12 +71,12 @@ float getRandomSwapAmount(){
 
 void setRandomFixedSwap(counterParties& cp){
 	//FUN: adds fixed payments up to a random month for input counterparty
-	int month=rand() %(SWAP_PERIODS-SWAP_START+1)+SWAP_START;
+	long month=rand() %(SWAP_PERIODS-SWAP_START+1)+SWAP_START;
 	float notionalValue=getRandomSwapAmount();
 	//get fixed rate
 	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
 	float fixedMonthAmt=rate*notionalValue/12.0;
-	for (int i=0;i<month;i++){
+	for (long i=0;i<month;i++){
 		cp.swapFixed[i]+=fixedMonthAmt;
 		cp.swapFloatNom[i]+=notionalValue;
 	}
@@ -84,7 +84,7 @@ void setRandomFixedSwap(counterParties& cp){
 	cp.numSwaps++;
 }
 
-void writeCounterparties(counterParties* cp,string& fileName, int size){
+void writeCounterparties(counterParties* cp,string& fileName, long size){
 }
 
 void saveCP(counterParties* cp,string fileName,long size){
@@ -95,9 +95,9 @@ void saveCP(counterParties* cp,string fileName,long size){
 
 }
 
-void printCPDetails(counterParties& cp){
+void prlongCPDetails(counterParties& cp){
 	cout<<cp.hazardRate<<","<<cp.netCashDeal<<","<<cp.numSwaps<<"|";
-	for (int i=0;i<SWAP_PERIODS;i++){
+	for (long i=0;i<SWAP_PERIODS;i++){
 		cout<<i<<','<<cp.swapFixed[i]<<','<<cp.swapFloatNom[i]*DISCOUNT/12.0<<'|'<<endl;
 	}
 	cout<<endl;

@@ -22,20 +22,20 @@ struct counterParties {
 		hazardRate=0;
 		netCashDeal=0;
 		numSwaps=0;
-		for (int i=0;i<SWAP_PERIODS;i++){
+		for (long i=0;i<SWAP_PERIODS;i++){
 			swapFixed[i]=0;
 			swapFloatNom[i]=0;
 		}
 	}
 };
 
-void setupCounterparties(counterParties* cp,int size);
-void allocateDeals(counterParties* cp,int size);
-void allocateSwaps(counterParties* cp,int size);
-void writeCounterparties(counterParties* cp,string& fileName,int size);
+void setupCounterparties(counterParties* cp,long size);
+void allocateDeals(counterParties* cp,long size);
+void allocateSwaps(counterParties* cp,long size);
+void writeCounterparties(counterParties* cp,string& fileName,long size);
 
 //get a random counter party number (based on predefined allocation ratios)
-long getRandomAllocation(int size);
+long getRandomAllocation(long size);
 
 //returns a random deal within the range, can be positive or negative
 float getRandomCash();

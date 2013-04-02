@@ -23,7 +23,7 @@ struct counterpartyCVA
 	{
 		for (int i=0;i<5;i++){
 			normalizedCashCVA[i]=0;
-			for (int j=0;j<SWAP_PERIODS;j++){
+			for (long j=0;j<SWAP_PERIODS;j++){
 				normalizedSwapFloatCVA[i][j]=0;
 				normalizedSwapFixedCVA[i][j]=0;
 			}
@@ -39,7 +39,7 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 	for(int i=0;i<5;i++)
 	{
 		tempCVA.normalizedCashCVA[i]=cvaL.normalizedCashCVA[i]+cvaR.normalizedCashCVA[i];
-		for (int j=0;j<SWAP_PERIODS;j++){
+		for (long j=0;j<SWAP_PERIODS;j++){
 			tempCVA.normalizedSwapFloatCVA[i][j]=
 					cvaL.normalizedSwapFloatCVA[i][j]+cvaR.normalizedSwapFloatCVA[i][j];
 			tempCVA.normalizedSwapFixedCVA[i][j]=
@@ -52,7 +52,7 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
 	__host__ __device__
-	counterpartyCVA operator()(unsigned int seed)
+	counterpartyCVA operator()(unsigned long seed)
 	{
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
@@ -100,7 +100,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		//probability of default this and last period
 		//run the required number of steps
 //		if(seed==6)cout<<"start price: "<<price<<endl;
-		for(unsigned int i = 0; i < SWAP_PERIODS-1; ++i)
+		for(unsigned long i = 0; i < SWAP_PERIODS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
@@ -110,12 +110,12 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			price+=price*normal*priceFactor;
 			//generate discount for current step using nelson siegel
 			normalNS=ndistns(rng);
-			if (seed==8)cout<<i<<",norm: "<<normalNS<<",timest: "<<timeStep<<",";
+//			if (seed==8)cout<<i<<",norm: "<<normalNS<<",timest: "<<timeStep<<",";
 			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
 			x0=x1;
 			stepDisc=exp(-timeStep*x1);
 			discount=discount*stepDisc;
-			if(seed==8)cout<<i<<','<<price<<','<<x1<<','<<discount<<endl;
+//			if(seed==8)cout<<i<<','<<price<<','<<x1<<','<<discount<<endl;
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
@@ -124,7 +124,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 				sumCVA.normalizedCashCVA[j]+=defProb*discount*price;
 				sumCVA.normalizedSwapFixedCVA[j][i]=defProb*discount;
 				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc*x1*1.0/12.0;
-				if(seed==10)cout<<i<<" j: "<<j<<","<<sumCVA.normalizedSwapFixedCVA[j][i]<<endl;
+//				if(seed==10)cout<<i<<" j: "<<j<<","<<sumCVA.normalizedSwapFixedCVA[j][i]<<endl;
 
 			}
 		}
@@ -140,7 +140,7 @@ counterpartyCVA genPaths()
 			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(),cpCVA,binary_op);
 	for (int i=0;i<5;i++){
 		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);
-		for (int j=0;j<SWAP_PERIODS;j++){
+		for (long j=0;j<SWAP_PERIODS;j++){
 			cpCVA.normalizedSwapFixedCVA[i][j]=cpCVA.normalizedSwapFixedCVA[i][j]/float(NUM_SIMULATIONS);
 			cpCVA.normalizedSwapFloatCVA[i][j]=cpCVA.normalizedSwapFloatCVA[i][j]/float(NUM_SIMULATIONS);
 		}
@@ -154,9 +154,9 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 	float cashCVA=0;
 	float floatCVA=0;
 	float fixedCVA=0;
-	int partiesFifth = size / 5;
+	long partiesFifth = size / 5;
 	for (int j = 0; j < 5; j++) {
-		int startCount = partiesFifth * j;
+		long startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
 			cashCVA+=cpCVA.normalizedCashCVA[j]*cp[startCount + i].netCashDeal;
 			for (long k=0;k<SWAP_PERIODS;k++){
@@ -175,18 +175,24 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 int main(){
 	XLog logMain("CVA 2 Main");
 	logMain.start();
-	const long cpGroups=iMAX_CP_GROUP/PARTIES_NUM;
-	counterParties cp[iMAX_CP_GROUP];
-	{
+	//break processing into groups to manage memory
+	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
+	cout<<"batches: "<<cpBatches<<endl;
+	//manage deal allocation
+	const long cpPerBatch=PARTIES_NUM/cpBatches;
+
+	for (int i=0;i<cpBatches;i++){
+		//allocate memory for a single batch
+		counterParties cp[cpPerBatch];
 		XLog logAlloc("Setup");
 		logAlloc.start();
-		setupCounterparties(cp, iMAX_CP_GROUP);
+		setupCounterparties(cp, cpPerBatch);
 		logAlloc.log("Counterparties creation complete");
-		allocateDeals(cp,iMAX_CP_GROUP);
+		allocateDeals(cp,cpPerBatch);
 		logAlloc.log("Deal allocation complete");
 		string cpFile("counterparties.txt");
 //		writeCounterparties(cp,cpFile);
-		saveCP(cp,"testBin",iMAX_CP_GROUP);
+		saveCP(cp,"testBin",cpPerBatch);
 		XLog logTransform("Transform");
 		logTransform.start();
 		counterpartyCVA cpCVA=genPaths();
@@ -196,10 +202,9 @@ int main(){
 		logAlloc.end();
 		{
 			XLog logSum("Sum CVA");
-			float totalCVA=getCumulativeCVA(cpCVA,cp,iMAX_CP_GROUP);
+			float totalCVA=getCumulativeCVA(cpCVA,cp,cpPerBatch);
 			logSum.log("total CVA:",totalCVA);
 		}
-//		printCPDetails(cp[7]);
 	}
 	logMain.end();
 	return 0;
