@@ -1,8 +1,8 @@
 #include "setup4.h"
 
-void setupCounterparties(counterParties * cp, long size) {
+void setupCounterparties(counterParties * cp) {
 	//DESC: initialize counterparties with predefined hazard rates
-	long partiesFifth = size / 5;
+	long partiesFifth = CP_PER_BATCH / 5;
 	for (long j = 0; j < 5; j++) {
 		float thisHazard = 0.02 * (1 + j);
 		long startCount = partiesFifth * j;
@@ -12,33 +12,33 @@ void setupCounterparties(counterParties * cp, long size) {
 	}
 }
 
-void allocateDeals(counterParties* cp, long size) {
+void allocateDeals(counterParties* cp) {
 	//allocate at least one deal to each counterparty
-	for (long i = 0; i < size; i++) {
+	for (long i = 0; i < CP_PER_BATCH; i++) {
 		cp[i].netCashDeal = getRandomCash();
 		setRandomFixedSwap(cp[i]);
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
 	//assign cash deals randomly
-	for (long i = 0; i < (CASH_DEALS_NUM - size); i++) {
-		long partyCashAllocated = getRandomAllocation(size);
+	for (long i = 0; i < (CASH_DEALS_NUM/CP_BATCHES - CP_PER_BATCH); i++) {
+		long partyCashAllocated = getRandomAllocation();
 		cp[partyCashAllocated].netCashDeal += getRandomCash();
 	}
 
 	//assign swaps randomly
-	for (long i = 0; i < (SWAP_DEALS_NUM - size); i++) {
-		long partySwapAllocated = getRandomAllocation(size);
+	for (long i = 0; i < (SWAP_DEALS_NUM/CP_BATCHES - CP_PER_BATCH); i++) {
+		long partySwapAllocated = getRandomAllocation();
 		setRandomFixedSwap(cp[partySwapAllocated]);
 	}
 }
 
-long getRandomAllocation(long size) {
+long getRandomAllocation() {
 	//get a number between 0 and 30
 	long numAlloc = rand() % 31;
 	//define the target
 	for (long i = 0; i < 5; i++) {
 		if (numAlloc < PROP_CUTOFF[i]) {
-			return ((size / 5) * i) + rand() % (size / 5);
+			return ((CP_PER_BATCH / 5) * i) + rand() % (CP_PER_BATCH / 5);
 		}
 	}
 	//error, no target found
@@ -84,15 +84,14 @@ void setRandomFixedSwap(counterParties& cp){
 	cp.numSwaps++;
 }
 
-void writeCounterparties(counterParties* cp,string& fileName, long size){
+void writeCounterparties(counterParties* cp,string& fileName){
 }
 
-void saveCP(counterParties* cp,string fileName,long size){
+void saveCP(counterParties* cp,string fileName){
 	std::ofstream binFile;
 	binFile.open (fileName.c_str(), ios::out| ios::binary);
-	binFile.write ((char*)cp, size*sizeof(counterParties));
+	binFile.write ((char*)cp, CP_PER_BATCH*sizeof(counterParties));
 	binFile.close();
-
 }
 
 void prlongCPDetails(counterParties& cp){

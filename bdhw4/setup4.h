@@ -29,13 +29,13 @@ struct counterParties {
 	}
 };
 
-void setupCounterparties(counterParties* cp,long size);
-void allocateDeals(counterParties* cp,long size);
-void allocateSwaps(counterParties* cp,long size);
-void writeCounterparties(counterParties* cp,string& fileName,long size);
+void setupCounterparties(counterParties* cp);
+void allocateDeals(counterParties* cp);
+void allocateSwaps(counterParties* cp);
+void writeCounterparties(counterParties* cp,string& fileName);
 
 //get a random counter party number (based on predefined allocation ratios)
-long getRandomAllocation(long size);
+long getRandomAllocation();
 
 //returns a random deal within the range, can be positive or negative
 float getRandomCash();
@@ -43,7 +43,7 @@ void setRandomFixedSwap(counterParties& cp);
 float getRandomSwapMthAmount();
 
 //save counterparty array to binary file
-void saveCP(counterParties* cp,string fileName,long size);
+void saveCP(counterParties* cp,string fileName);
 
 //print details of a single counterparty
 void printCPDetails(counterParties& cp);

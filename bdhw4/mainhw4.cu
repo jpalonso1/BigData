@@ -138,6 +138,7 @@ counterpartyCVA genPaths()
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
 			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(),cpCVA,binary_op);
+	//find averages for the CVA
 	for (int i=0;i<5;i++){
 		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);
 		for (long j=0;j<SWAP_PERIODS;j++){
@@ -176,33 +177,33 @@ int main(){
 	XLog logMain("CVA 2 Main");
 	logMain.start();
 	//break processing into groups to manage memory
-	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
-	cout<<"batches: "<<cpBatches<<endl;
+//	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
+	cout<<"batches: "<<CP_BATCHES<<endl;
 	//manage deal allocation
-	const long cpPerBatch=PARTIES_NUM/cpBatches;
+//	const long cpPerBatch=PARTIES_NUM/cpBatches;
 
-	for (int i=0;i<cpBatches;i++){
+	for (int i=0;i<CP_BATCHES;i++){
 		//allocate memory for a single batch
-		counterParties cp[cpPerBatch];
+		counterParties cp[CP_PER_BATCH];
 		XLog logAlloc("Setup");
 		logAlloc.start();
-		setupCounterparties(cp, cpPerBatch);
+		setupCounterparties(cp);
 		logAlloc.log("Counterparties creation complete");
-		allocateDeals(cp,cpPerBatch);
+		allocateDeals(cp);
 		logAlloc.log("Deal allocation complete");
 		string cpFile("counterparties.txt");
 //		writeCounterparties(cp,cpFile);
-		saveCP(cp,"testBin",cpPerBatch);
+		saveCP(cp,"testBin");
 		XLog logTransform("Transform");
 		logTransform.start();
 		counterpartyCVA cpCVA=genPaths();
 		logTransform.end();
 		logAlloc.log("Output file");
-
+		cout<<"test deals: "<<cp[4200].numSwaps<<endl;
 		logAlloc.end();
 		{
 			XLog logSum("Sum CVA");
-			float totalCVA=getCumulativeCVA(cpCVA,cp,cpPerBatch);
+			float totalCVA=getCumulativeCVA(cpCVA,cp,CP_PER_BATCH);
 			logSum.log("total CVA:",totalCVA);
 		}
 	}
