@@ -13,8 +13,8 @@
 
 const long DEALS_NUM = 100000000;
 const long PARTIES_NUM = 10000;
-const long MIN_DEAL = 8000000;
-const long MAX_DEAL = 12000000;
+const long MIN_DEAL = 800000;
+const long MAX_DEAL = 1200000;
 const long NUM_SIMULATIONS = 10000;
 const long NUM_TIMESTEPS =1000;
 
@@ -39,6 +39,10 @@ struct paramStruct{
 	float DISCOUNT;
 	float YEARS;
 };
+
+const XParams param("paramhw2.txt");
+
+paramStruct initParameters();
 
 const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 
