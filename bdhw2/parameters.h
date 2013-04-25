@@ -28,13 +28,10 @@ struct paramStruct{
 	float YEARS;
 };
 
-//holds the changes from the external parameter file
-const XParams param("paramhw2.txt");
+//get parameters from external file (if they exist) or defaults
+paramStruct initParameters(string paramFile="sample_parameters.txt");
 
-//extract parameters from external file and defaults
-paramStruct initParameters();
-
-//holds properties/parameters merged from defaults and external parameter file
+//holds properties/parameters for use in host
 const paramStruct parh=initParameters();
 
 #endif /* PARAAMETERS_H_ */

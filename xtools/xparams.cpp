@@ -21,6 +21,12 @@ bool XParams::seekValue(const string& par, string & out)const {
 	return false;
 }
 
+int XParams::getLong(const string par, long def)const{
+	string temp;
+	if (seekValue(par,temp))return atol(temp.c_str());
+	else return def;
+}
+
 float XParams::getFloat(const string par, float def) const {
 	string temp;
 	if (seekValue(par,temp))return atof(temp.c_str());
@@ -45,4 +51,7 @@ void XParams::extractParams() {
 		getline(logFile,line);
 		value.push_back(line);
 	}
+//	for (int i=0;i<name.size();i++){
+//		cout<<name[i]<<" :: "<<value[i]<<endl;
+//	}
 }

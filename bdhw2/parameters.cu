@@ -1,22 +1,11 @@
 #include "parameters.h"
 
-//const long DEALS_NUM = 500000;
-//const long PARTIES_NUM = 10000;
-//const long MIN_DEAL = 800000;
-//const long MAX_DEAL = 1200000;
-//const long NUM_SIMULATIONS = 10000;
-//const long NUM_TIMESTEPS =1000;
-//
-//const float PERCENT_LONG = 0.6;
-//const float STARTING_PRICE = 1.4;
-//const float BASE_HAZARD=0.02;
-//const float VARIANCE=0.2;
-//const float DISCOUNT=0.06;
-//const float YEARS = 5;
+paramStruct initParameters(string paramFile){
+	//holds the changes from the external parameter file
+	const XParams param(paramFile.c_str());
 
-
-paramStruct initParameters(){
 	paramStruct tempPar;
+	//choose between external parameter from file if it exists, default otherwise
 	tempPar.DEALS_NUM= param.getLong("DEALS_NUM",100000000);
 	tempPar.PARTIES_NUM= param.getLong("PARTIES_NUM",10000);
 	tempPar.MIN_DEAL= param.getLong("MIN_DEAL",800000);

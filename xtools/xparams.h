@@ -18,11 +18,7 @@ public:
 	XParams(const char* paramPath);
 	virtual ~XParams();
 	//take a parameter name and a default value as argument
-	int getLong(const string par, long def)const{
-		string temp;
-		if (seekValue(par,temp))return atol(temp.c_str());
-		else return def;
-	}
+	int getLong(const string par, long def)const;
 	float getFloat(const string par, float def)const;
 	string getString(const string par, string def)const;
 
@@ -32,7 +28,6 @@ public:
 		}
 	}
 private:
-
 	bool seekValue(const string& par, string & out)const;
 	fstream logFile;
 	vector<string> name;
