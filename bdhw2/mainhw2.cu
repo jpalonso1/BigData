@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include <thrust/device_vector.h>
 #include <thrust/sequence.h>
@@ -17,9 +18,9 @@
 
 using namespace std;
 
-//holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
+	//DESC: holds the normalized simulation results for each type of counterparty
 	float normalizedCVA[5];
 	//intialize counterparties and set to 0
 	__host__ __device__
@@ -29,10 +30,12 @@ struct counterpartyCVA
 	}
 };
 
-//operator to be called in thrust binary operation
 __host__ __device__
 counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR)
 {
+	//DESC: operator to be called in thrust binary operation to aggregate the results of each simulation
+	//IN: two counterpartyCVA object to be added
+	//OUT: a counterpartyCVA object containing the sum of both input objects
 	counterpartyCVA tempCVA;
 	for(int i=0;i<5;i++)
 	{
@@ -49,6 +52,10 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
+		//DESC: functor to run each simulation
+		//IN: seed for random number generation
+		//OUT: CVA object to be aggregated
+
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -100,20 +107,49 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 	}
 };
 
+counterpartyCVA genPaths();
+
+float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp);
+
+int main(){
+	XLog logMain("CVA Main");
+
+	//-----------------Setup
+	//initialize counterparties vector
+	XLog logAlloc("Setup");
+	vector<counterParties> cp(parh.PARTIES_NUM);
+	//intialize counterparties CVA
+	setupCounterparties(cp);
+	//assign deals to counterparties randomly based on ratio
+	allocateDeals(cp);
+	logAlloc.end();
+
+	//----------------Simulation
+	XLog logPath("Path simulation");
+	counterpartyCVA cpCVA;
+	cpCVA=genPaths();
+	logPath.end();
+
+	//---------------Aggregation
+	XLog logSum("Aggregate CVA");
+	float totalCVA;
+	totalCVA=getCumulativeCVA(cpCVA,cp);
+	logSum.log("total CVA:",totalCVA);
+	logSum.end();
+
+	logMain.end();
+	return 0;
+}
+
 counterpartyCVA genPaths()
 {
-//	//update parameters from parameter file
-//	paramStruct parh;
-//	parh=initParameters();
-
+	//CVA aggregator for simulations run
     thrust::plus<counterpartyCVA> binary_op;
     counterpartyCVA cpCVA;
-    XLog logInTr("Inside Transform");
-    logInTr.start();
-	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
+    //run the simulation using thrust reduction
+    cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
 			thrust::counting_iterator<int>(parh.NUM_SIMULATIONS),get_CVA(parh),cpCVA,binary_op);
-	logInTr.end();
-	cout<<"Transform end"<<endl;
+
 	for (int i=0;i<5;i++)
 	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(parh.NUM_SIMULATIONS);}
 	return cpCVA;
@@ -121,46 +157,16 @@ counterpartyCVA genPaths()
 
 float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 {
+	//DESC: uses the normalized CVA factors to get the total CVA for each counterparty
+	//and aggregates it
+	//IN: normalized CVA factor, vector containing all counterParties
 	float sumCVA=0;
 	int partiesFifth = parh.PARTIES_NUM / 5;
 	for (int j = 0; j < 5; j++) {
 		int startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
-//			cout<<cp[startCount + i].netDeal<<endl;
 			sumCVA+=cpCVA.normalizedCVA[j]*cp[startCount + i].netDeal;
 		}
 	}
 	return sumCVA;
-}
-
-int main(){
-	XLog logMain("CVA Main");
-	logMain.start();
-
-
-	//-----------------Setup-----------------------
-	//initialize counterparties vector
-	XLog logAlloc("Setup");
-	vector<counterParties> cp(parh.PARTIES_NUM);
-	//intialize counterparties CVA
-	setupCounterparties(cp);
-	logAlloc.log("Counterparties Setup");
-	//assign deals to counterparties randomly based on ratio
-	allocateDeals(cp);
-	logAlloc.log("Deal allocation complete");
-	logAlloc.end();
-
-	counterpartyCVA cpCVA;
-	XLog logPath("Path simulation");
-	cpCVA=genPaths();
-	logPath.end();
-
-	float totalCVA;
-	{
-		XLog logSum("Sum CVA");
-		totalCVA=getCumulativeCVA(cpCVA,cp);
-		logSum.log("total CVA:",totalCVA);
-	}
-	logMain.end();
-	return 0;
 }
