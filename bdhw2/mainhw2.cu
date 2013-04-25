@@ -62,13 +62,13 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
 		//initialize parameters for simulation
-		float timeStep=YEARS/float(par->NUM_TIMESTEPS);
+		float timeStep=YEARS/float(NUM_TIMESTEPS);
 		float time=0;
 		float defProb=0;
-		double price=par->STARTING_PRICE;
+		double price=STARTING_PRICE;
 		float discount=1;
 		//factor used in random evolution of price
-		float priceFactor=sqrt(par->VARIANCE)*(timeStep);
+		float priceFactor=sqrt(VARIANCE)*(timeStep);
 
 		//to hold the random normal generated each step
 		float normal=ndist(rng);
@@ -77,12 +77,12 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float hazard[5];
 		for (int i=0;i<5;i++)
 		{
-			hazard[i]=par->BASE_HAZARD+par->BASE_HAZARD*float(i);
+			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
 		}
 
 		//run the required number of steps
 		//NOTE: TO BE OPTIMIZED
-		for(unsigned int i = 0; i < par->NUM_TIMESTEPS-1; ++i)
+		for(unsigned int i = 0; i < NUM_TIMESTEPS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
@@ -90,7 +90,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 			normal=ndist(rng);
 			price+=price*normal*priceFactor;
 			//get discount for current step
-			discount=1.0/exp(par->DISCOUNT*time);
+			discount=1.0/exp(DISCOUNT*time);
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
@@ -108,10 +108,16 @@ counterpartyCVA genPaths()
 	paramStruct parh;
 	parh=initParameters();
 
-	cout<<"host num"<<parh.NUM_TIMESTEPS;
-
     thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
     dev_ptr[0]=parh;
+
+    // wrap raw pointer with a device_ptr
+//    thrust::device_ptr<paramStruct> dev_ptr(raw_ptr);
+    //      paramStruct * par_ptr;
+    //      cudaMalloc((void **) &par_ptr,sizeof(parh));
+    //      cudaMemcpy(par_ptr,&parh,sizeof(parh), cudaMemcpyHostToDevice);
+    //      thrust::device_ptr<paramStruct> dev_ptr(par_ptr);
+
 
     thrust::plus<counterpartyCVA> binary_op;
     counterpartyCVA cpCVA;
@@ -122,7 +128,6 @@ counterpartyCVA genPaths()
 	logInTr.end();
 	for (int i=0;i<5;i++)
 	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(NUM_SIMULATIONS);}
-	cout<<endl;
 	return cpCVA;
 }
 
@@ -145,31 +150,22 @@ int main(){
 	logMain.start();
 
 
-//	paramStruct* pard;
-//	cudaMalloc((void**)&pard,sizeof(parh));
-//	cudaMemcpy(pard,&parh,sizeof(parh),cudaMemcpyHostToDevice);
-//	thrust::device_ptr<paramStruct> dev_ptr2(pard);
-//	dev_ptr=dev_ptr2;
-
-//	thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
-//    paramStruct* pard=thrust::raw_pointer_cast(dev_ptr);
-
-//	cout<<"NUM_TIMESTEPS: "<<parh.NUM_TIMESTEPS<<endl;
+	//-----------------Setup-----------------------
+	//initialize counterparties vector
+	XLog logAlloc("Setup");
 	vector<counterParties> cp(PARTIES_NUM);
-	{
-		XLog logAlloc("Setup");
-		setupCounterparties(cp);
-		logAlloc.log("Counterparties Setup");
-		allocateDeals(cp);
-		logAlloc.log("Deal allocation complete");
-	}
+	//intialize counterparties CVA
+	setupCounterparties(cp);
+	logAlloc.log("Counterparties Setup");
+	//assign deals to counterparties randomly based on ratio
+	allocateDeals(cp);
+	logAlloc.log("Deal allocation complete");
+	logAlloc.end();
 
 	counterpartyCVA cpCVA;
-	{
-		XLog logPath("Path simulation");
-		cpCVA=genPaths();
-		logPath.end();
-	}
+	XLog logPath("Path simulation");
+	cpCVA=genPaths();
+	logPath.end();
 
 	float totalCVA;
 	{
