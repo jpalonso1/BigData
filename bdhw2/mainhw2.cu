@@ -43,14 +43,17 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 
 struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
-	thrust::device_ptr<paramStruct> raw_par;
-	get_CVA(thrust::device_ptr<paramStruct> _raw_par):raw_par(_raw_par){}
+//	thrust::device_ptr<paramStruct> raw_par;
+//	get_CVA(thrust::device_ptr<paramStruct> _raw_par):raw_par(_raw_par){}
+//	paramStruct par;
+//	get_CVA(paramStruct _par):par(_par){}
 
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
-		paramStruct * par = thrust::raw_pointer_cast(raw_par);
+//		paramStruct * par = thrust::raw_pointer_cast(raw_par);
 
+//		cout<<par.NUM_SIMULATIONS;
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -65,7 +68,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float timeStep=YEARS/float(NUM_TIMESTEPS);
 		float time=0;
 		float defProb=0;
-		double price=STARTING_PRICE;
+		float price=STARTING_PRICE;
 		float discount=1;
 		//factor used in random evolution of price
 		float priceFactor=sqrt(VARIANCE)*(timeStep);
@@ -108,8 +111,8 @@ counterpartyCVA genPaths()
 	paramStruct parh;
 	parh=initParameters();
 
-    thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
-    dev_ptr[0]=parh;
+//    thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
+//    dev_ptr[0]=parh;
 
     // wrap raw pointer with a device_ptr
 //    thrust::device_ptr<paramStruct> dev_ptr(raw_ptr);
@@ -124,8 +127,9 @@ counterpartyCVA genPaths()
     XLog logInTr("Inside Transform");
     logInTr.start();
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(dev_ptr),cpCVA,binary_op);
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),cpCVA,binary_op);
 	logInTr.end();
+	cout<<"Transform end"<<endl;
 	for (int i=0;i<5;i++)
 	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(NUM_SIMULATIONS);}
 	return cpCVA;

@@ -11,7 +11,7 @@
 #include <thrust/host_vector.h>
 #include "xparams.h"
 
-const long DEALS_NUM = 100000000;
+const long DEALS_NUM = 500000;
 const long PARTIES_NUM = 10000;
 const long MIN_DEAL = 800000;
 const long MAX_DEAL = 1200000;
@@ -24,6 +24,8 @@ const float BASE_HAZARD=0.02;
 const float VARIANCE=0.2;
 const float DISCOUNT=0.06;
 const float YEARS = 5;
+
+const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 
 struct paramStruct{
 	long DEALS_NUM;
@@ -44,6 +46,5 @@ const XParams param("paramhw2.txt");
 
 paramStruct initParameters();
 
-const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 
 #endif /* PARAAMETERS_H_ */

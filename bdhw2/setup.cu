@@ -3,7 +3,7 @@
 void setupCounterparties(vector<counterParties>& cp) {
 	int partiesFifth = PARTIES_NUM / 5;
 	for (int j = 0; j < 5; j++) {
-		double thisHazard = 0.02 * (1 + j);
+		float thisHazard = 0.02 * (1 + j);
 		int startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
 			cp[startCount + i].hazardRate = thisHazard;
@@ -19,7 +19,7 @@ void allocateDeals(vector<counterParties>& cp) {
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
 	for (int i = 0; i < (DEALS_NUM - PARTIES_NUM); i++) {
-		double deal = getRandomDeal();
+		float deal = getRandomDeal();
 		long partyAllocated = getRandomAllocation();
 		cp[partyAllocated].netDeal += deal;
 	}
