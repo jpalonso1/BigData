@@ -17,6 +17,9 @@
 
 using namespace std;
 
+//holds properties/parameters updated from parameter file
+const paramStruct parh=initParameters();
+
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
@@ -43,17 +46,12 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 
 struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
-//	thrust::device_ptr<paramStruct> raw_par;
-//	get_CVA(thrust::device_ptr<paramStruct> _raw_par):raw_par(_raw_par){}
-//	paramStruct par;
-//	get_CVA(paramStruct _par):par(_par){}
+	paramStruct par;
+	get_CVA(paramStruct _par):par(_par){}
 
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
 	{
-//		paramStruct * par = thrust::raw_pointer_cast(raw_par);
-
-//		cout<<par.NUM_SIMULATIONS;
 		//initialize output counterparty results
 		counterpartyCVA sumCVA;
 
@@ -61,17 +59,16 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::default_random_engine rng(seed);
 
 		// create a mapping from random numbers to [0,1)
-		//thrust::uniform_real_distribution<float> u01(0,1);
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
 		//initialize parameters for simulation
-		float timeStep=YEARS/float(NUM_TIMESTEPS);
+		float timeStep=YEARS/float(par.NUM_TIMESTEPS);
 		float time=0;
 		float defProb=0;
-		float price=STARTING_PRICE;
+		float price=par.STARTING_PRICE;
 		float discount=1;
 		//factor used in random evolution of price
-		float priceFactor=sqrt(VARIANCE)*(timeStep);
+		float priceFactor=sqrt(par.VARIANCE)*(timeStep);
 
 		//to hold the random normal generated each step
 		float normal=ndist(rng);
@@ -80,12 +77,12 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float hazard[5];
 		for (int i=0;i<5;i++)
 		{
-			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
+			hazard[i]=par.BASE_HAZARD+par.BASE_HAZARD*float(i);
 		}
 
 		//run the required number of steps
 		//NOTE: TO BE OPTIMIZED
-		for(unsigned int i = 0; i < NUM_TIMESTEPS-1; ++i)
+		for(unsigned int i = 0; i < par.NUM_TIMESTEPS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
@@ -93,7 +90,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 			normal=ndist(rng);
 			price+=price*normal*priceFactor;
 			//get discount for current step
-			discount=1.0/exp(DISCOUNT*time);
+			discount=1.0/exp(par.DISCOUNT*time);
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
@@ -108,26 +105,16 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 
 counterpartyCVA genPaths()
 {
-	paramStruct parh;
-	parh=initParameters();
-
-//    thrust::device_ptr<paramStruct> dev_ptr = thrust::device_malloc<paramStruct>(1);
-//    dev_ptr[0]=parh;
-
-    // wrap raw pointer with a device_ptr
-//    thrust::device_ptr<paramStruct> dev_ptr(raw_ptr);
-    //      paramStruct * par_ptr;
-    //      cudaMalloc((void **) &par_ptr,sizeof(parh));
-    //      cudaMemcpy(par_ptr,&parh,sizeof(parh), cudaMemcpyHostToDevice);
-    //      thrust::device_ptr<paramStruct> dev_ptr(par_ptr);
-
+//	//update parameters from parameter file
+//	paramStruct parh;
+//	parh=initParameters();
 
     thrust::plus<counterpartyCVA> binary_op;
     counterpartyCVA cpCVA;
     XLog logInTr("Inside Transform");
     logInTr.start();
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(),cpCVA,binary_op);
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(parh),cpCVA,binary_op);
 	logInTr.end();
 	cout<<"Transform end"<<endl;
 	for (int i=0;i<5;i++)

@@ -11,7 +11,7 @@
 #include <thrust/host_vector.h>
 #include "xparams.h"
 
-const long DEALS_NUM = 500000;
+const long DEALS_NUM = 100000000;
 const long PARTIES_NUM = 10000;
 const long MIN_DEAL = 800000;
 const long MAX_DEAL = 1200000;
