@@ -1,7 +1,7 @@
 #include "setup.h"
 
 void setupCounterparties(vector<counterParties>& cp) {
-	int partiesFifth = PARTIES_NUM / 5;
+	int partiesFifth = parh.PARTIES_NUM / 5;
 	for (int j = 0; j < 5; j++) {
 		float thisHazard = 0.02 * (1 + j);
 		int startCount = partiesFifth * j;
@@ -14,11 +14,11 @@ void setupCounterparties(vector<counterParties>& cp) {
 
 void allocateDeals(vector<counterParties>& cp) {
 	//allocate at least one deal to each counterparty
-	for (int i = 0; i < PARTIES_NUM; i++) {
+	for (int i = 0; i < parh.PARTIES_NUM; i++) {
 		cp[i].netDeal = getRandomDeal();
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
-	for (int i = 0; i < (DEALS_NUM - PARTIES_NUM); i++) {
+	for (int i = 0; i < (parh.DEALS_NUM - parh.PARTIES_NUM); i++) {
 		float deal = getRandomDeal();
 		long partyAllocated = getRandomAllocation();
 		cp[partyAllocated].netDeal += deal;
@@ -32,7 +32,7 @@ long getRandomAllocation() {
 	//define the target
 	for (int i = 0; i < 5; i++) {
 		if (numAlloc < PROP_CUTOFF[i]) {
-			return ((PARTIES_NUM / 5) * i) + rand() % (PARTIES_NUM / 5);
+			return ((parh.PARTIES_NUM / 5) * i) + rand() % (parh.PARTIES_NUM / 5);
 		}
 	}
 	//error, no target found
@@ -42,9 +42,9 @@ long getRandomAllocation() {
 long getRandomDeal() {
 
 	//get absolute value of deal
-	long deal = MIN_DEAL + xfun::randomUniform() * (MAX_DEAL - MIN_DEAL);
+	long deal = parh.MIN_DEAL + xfun::randomUniform() * (parh.MAX_DEAL - parh.MIN_DEAL);
 	//adjust if short
-	if (xfun::randomUniform() > PERCENT_LONG)
+	if (xfun::randomUniform() > parh.PERCENT_LONG)
 		deal = (-deal);
 	return deal;
 }

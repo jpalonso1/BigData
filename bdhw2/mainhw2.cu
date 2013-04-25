@@ -17,9 +17,6 @@
 
 using namespace std;
 
-//holds properties/parameters updated from parameter file
-const paramStruct parh=initParameters();
-
 //holds the normalized simulation results for each type of counterparty
 struct counterpartyCVA
 {
@@ -46,8 +43,8 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 
 struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
-	paramStruct par;
-	get_CVA(paramStruct _par):par(_par){}
+	paramStruct pard;
+	get_CVA(paramStruct _pard):pard(_pard){}
 
 	__host__ __device__
 	counterpartyCVA operator()(unsigned int seed)
@@ -62,13 +59,13 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
 		//initialize parameters for simulation
-		float timeStep=YEARS/float(par.NUM_TIMESTEPS);
+		float timeStep=pard.YEARS/float(pard.NUM_TIMESTEPS);
 		float time=0;
 		float defProb=0;
-		float price=par.STARTING_PRICE;
+		float price=pard.STARTING_PRICE;
 		float discount=1;
 		//factor used in random evolution of price
-		float priceFactor=sqrt(par.VARIANCE)*(timeStep);
+		float priceFactor=sqrt(pard.VARIANCE)*(timeStep);
 
 		//to hold the random normal generated each step
 		float normal=ndist(rng);
@@ -77,12 +74,12 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float hazard[5];
 		for (int i=0;i<5;i++)
 		{
-			hazard[i]=par.BASE_HAZARD+par.BASE_HAZARD*float(i);
+			hazard[i]=pard.BASE_HAZARD+pard.BASE_HAZARD*float(i);
 		}
 
 		//run the required number of steps
 		//NOTE: TO BE OPTIMIZED
-		for(unsigned int i = 0; i < par.NUM_TIMESTEPS-1; ++i)
+		for(unsigned int i = 0; i < pard.NUM_TIMESTEPS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
@@ -90,7 +87,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 			normal=ndist(rng);
 			price+=price*normal*priceFactor;
 			//get discount for current step
-			discount=1.0/exp(par.DISCOUNT*time);
+			discount=1.0/exp(pard.DISCOUNT*time);
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
@@ -114,18 +111,18 @@ counterpartyCVA genPaths()
     XLog logInTr("Inside Transform");
     logInTr.start();
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA(parh),cpCVA,binary_op);
+			thrust::counting_iterator<int>(parh.NUM_SIMULATIONS),get_CVA(parh),cpCVA,binary_op);
 	logInTr.end();
 	cout<<"Transform end"<<endl;
 	for (int i=0;i<5;i++)
-	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(NUM_SIMULATIONS);}
+	{cpCVA.normalizedCVA[i]=cpCVA.normalizedCVA[i]/float(parh.NUM_SIMULATIONS);}
 	return cpCVA;
 }
 
 float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
 {
 	float sumCVA=0;
-	int partiesFifth = PARTIES_NUM / 5;
+	int partiesFifth = parh.PARTIES_NUM / 5;
 	for (int j = 0; j < 5; j++) {
 		int startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
@@ -144,7 +141,7 @@ int main(){
 	//-----------------Setup-----------------------
 	//initialize counterparties vector
 	XLog logAlloc("Setup");
-	vector<counterParties> cp(PARTIES_NUM);
+	vector<counterParties> cp(parh.PARTIES_NUM);
 	//intialize counterparties CVA
 	setupCounterparties(cp);
 	logAlloc.log("Counterparties Setup");
