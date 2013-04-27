@@ -111,7 +111,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			//generate discount for current step using nelson siegel
 			normalNS=ndistns(rng);
 //			if (seed==8)cout<<i<<",norm: "<<normalNS<<",timest: "<<timeStep<<",";
-			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
+//			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
 			x0=x1;
 			stepDisc=exp(-timeStep*x1);
 			discount=discount*stepDisc;
@@ -173,46 +173,49 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 	return sumCVA;
 }
 
-inline float getNSCurve(float b0, float b1, float b2,float lambda, float t){
-	float tOverL=t/lambda;
-	return b0+b1*lambda*(1-exp(-tOverL))/t+b2*lambda*((1-exp(-tOverL))/(t-exp(-tOverL)));
+inline float getNSCurve(float * BS,float t){
+	//0=beta0, 1=beta1, 2=beta2, 3=lambda
+	float tOverL=t/BS[3];
+	return BS[0]+BS[1]*BS[3]*(1-exp(-tOverL))/t+BS[2]*BS[3]*((1-exp(-tOverL))/(t-exp(-tOverL)));
 //	return b0+b1*exp(-tOverL)+b2*tOverL*exp(-tOverL);
 }
 
 int main(){
-	cout<<"test NS curve: "<<getNSCurve(BETA0,BETA1,BETA2,LAMBDA,49)<<endl;
+	cout<<"Testpar: "<<parh.NUM_SIMULATIONS<<endl;
+	float BS[4];
+	BS[0]=parh.NS.xBar[0];
+	BS[1]=parh.NS.xBar[1];
+	BS[2]=parh.NS.xBar[2];
+	BS[3]=parh.NS.xBar[3];
+	for (int i=0;i<50;i++){
+		cout<<"test NS curve: "<<getNSCurve(BS,i)<<endl;
+	}
 	XLog logMain("CVA 2 Main");
 	logMain.start();
 	//break processing into groups to manage memory
 //	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
 	cout<<"batches: "<<CP_BATCHES<<endl;
 	//manage deal allocation
-//	const long cpPerBatch=PARTIES_NUM/cpBatches;
-
 	for (int i=0;i<CP_BATCHES;i++){
 		//allocate memory for a single batch
 		counterParties cp[CP_PER_BATCH];
+
 		XLog logAlloc("Setup");
-		logAlloc.start();
 		setupCounterparties(cp);
-		logAlloc.log("Counterparties creation complete");
 		allocateDeals(cp);
-		logAlloc.log("Deal allocation complete");
-		string cpFile("counterparties.txt");
-//		writeCounterparties(cp,cpFile);
 		saveCP(cp,"testBin");
+		logAlloc.end();
+
 		XLog logTransform("Transform");
-		logTransform.start();
 		counterpartyCVA cpCVA=genPaths();
 		logTransform.end();
-		logAlloc.log("Output file");
+
 		cout<<"test deals: "<<cp[4200].numSwaps<<endl;
-		logAlloc.end();
-		{
-			XLog logSum("Sum CVA");
-			float totalCVA=getCumulativeCVA(cpCVA,cp,CP_PER_BATCH);
-			logSum.log("total CVA:",totalCVA);
-		}
+
+		XLog logSum("Aggregate CVA");
+		float totalCVA=getCumulativeCVA(cpCVA,cp,CP_PER_BATCH);
+		logSum.log("total CVA:",totalCVA);
+
 	}
 	logMain.end();
 	return 0;
