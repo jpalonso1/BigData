@@ -181,7 +181,6 @@ float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 		cout<<i<<" factor: "<<cpCVA.normalizedCashCVA[i]<<endl;
 	}
 
-
 	float cashCVA=0;
 	float floatCVA=0;
 	float fixedCVA=0;
@@ -196,14 +195,14 @@ float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 			}
 		}
 	}
-	float avgCash=cashCVA/NUM_SIMULATIONS;
-	float avgFloat=floatCVA/NUM_SIMULATIONS;
-	float avgFixed=fixedCVA/NUM_SIMULATIONS;
-	cout<<"avg cash: "<<avgCash<<endl;
-	cout<<"avg float: "<<avgFloat<<endl;
-	cout<<"avg fixed: "<<avgFixed<<endl;
-	float avgCVA=avgCash+avgFloat+avgFixed;
-	return avgCVA;
+	cout<<"total cash: "<<cashCVA<<endl;
+//	float avgCash=cashCVA/(size/5);
+//	float avgFloat=floatCVA/(size/5);
+//	float avgFixed=fixedCVA/(size/5);
+//	cout<<"avg cash: "<<avgCash<<endl;
+//	cout<<"avg float: "<<avgFloat<<endl;
+//	cout<<"avg fixed: "<<avgFixed<<endl;
+	return cashCVA+floatCVA+fixedCVA;
 }
 
 
@@ -213,6 +212,8 @@ int main(){
 	//break processing into groups to manage memory
 //	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
 	cout<<"batches: "<<CP_BATCHES<<endl;
+	//track sum of CVA from all batches
+	float sumCVA=0;
 	//manage deal allocation
 	for (int i=0;i<CP_BATCHES;i++){
 		//allocate memory for a single batch
@@ -232,9 +233,11 @@ int main(){
 
 		XLog logSum("Aggregate CVA");
 		float totalCVA=getAverageCVA(cpCVA,cp,CP_PER_BATCH);
-		logSum.log("total CVA:",totalCVA);
+		sumCVA+=totalCVA;
+		logSum.log("batch CVA:",totalCVA);
 
 	}
+	logMain.log("total CVA:",sumCVA);
 	logMain.end();
 	return 0;
 }
