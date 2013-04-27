@@ -1,6 +1,7 @@
+//Juan Pablo Alonso
+
 #include <string>
 #include <vector>
-#include <ctime>
 
 #include <thrust/device_vector.h>
 #include <thrust/sequence.h>
@@ -31,14 +32,12 @@ struct counterpartyCVA
 };
 
 __host__ __device__
-counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR)
-{
+counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cvaR){
 	//DESC: operator to be called in thrust binary operation to aggregate the results of each simulation
 	//IN: two counterpartyCVA object to be added
 	//OUT: a counterpartyCVA object containing the sum of both input objects
 	counterpartyCVA tempCVA;
-	for(int i=0;i<5;i++)
-	{
+	for(int i=0;i<5;i++){
 		tempCVA.normalizedCVA[i]=cvaL.normalizedCVA[i]+cvaR.normalizedCVA[i];
 	}
 	return tempCVA;
@@ -79,15 +78,13 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 
 		//initialize hazard rate factors (TO BE PARAMETRIZED?
 		float hazard[5];
-		for (int i=0;i<5;i++)
-		{
+		for (int i=0;i<5;i++){
 			hazard[i]=pard.BASE_HAZARD+pard.BASE_HAZARD*float(i);
 		}
 
 		//run the required number of steps
 		//NOTE: TO BE OPTIMIZED
-		for(unsigned int i = 0; i < pard.NUM_TIMESTEPS-1; ++i)
-		{
+		for(unsigned int i = 0; i < pard.NUM_TIMESTEPS-1; ++i){
 			time=time+timeStep;
 			//get new price
 
@@ -96,8 +93,7 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 			//get discount for current step
 			discount=1.0/exp(pard.DISCOUNT*time);
 			//find default probability for each and copy result to output CVA struct
-			for (int j=0;j<5;j++)
-			{
+			for (int j=0;j<5;j++){
 				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
 				sumCVA.normalizedCVA[j]+=defProb*discount*price;
 			}
@@ -108,7 +104,6 @@ struct get_CVA : public thrust::unary_function<unsigned int,counterpartyCVA>
 };
 
 counterpartyCVA genPaths();
-
 float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp);
 
 int main(){
@@ -135,14 +130,15 @@ int main(){
 	float totalCVA;
 	totalCVA=getCumulativeCVA(cpCVA,cp);
 	logSum.log("total CVA:",totalCVA);
-	logSum.end();
 
 	logMain.end();
 	return 0;
 }
 
-counterpartyCVA genPaths()
-{
+counterpartyCVA genPaths(){
+	//DESC: simulates the CVA and obtains the average
+	//OUT: Counterparty factor object
+
 	//CVA aggregator for simulations run
     thrust::plus<counterpartyCVA> binary_op;
     counterpartyCVA cpCVA;
@@ -155,8 +151,7 @@ counterpartyCVA genPaths()
 	return cpCVA;
 }
 
-float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp)
-{
+float getCumulativeCVA(counterpartyCVA& cpCVA,vector<counterParties>& cp){
 	//DESC: uses the normalized CVA factors to get the total CVA for each counterparty
 	//and aggregates it
 	//IN: normalized CVA factor, vector containing all counterParties

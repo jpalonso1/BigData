@@ -8,7 +8,7 @@ CXXFLAGS = $(INCLUDES) -Xcompiler -fopenmp -DTHRUST_DEVICE_BACKEND=THRUST_DEVICE
 
 SRC=../xtools/xparams.cpp ../xtools/xfun.cpp ../xtools/xlog.cpp setup.cu mainhw2.cu parameters.cu
 
-EXEC=base
+EXEC=cva
 
 $(EXEC):
 	$(CXX) -o $@ $(SRC) $(CXXFLAGS)

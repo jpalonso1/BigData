@@ -8,7 +8,7 @@ CXXFLAGS = $(INCLUDES)
 
 SRC=mainhw2.cu parameters.cu ../xtools/xparams.cpp ../xtools/xfun.cpp ../xtools/xlog.cpp setup.cu
 
-EXEC=base
+EXEC=cva
 
 $(EXEC):
 	$(CXX) -o $@ $(SRC) $(CXXFLAGS)

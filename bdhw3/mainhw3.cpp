@@ -16,6 +16,43 @@ using namespace std;
 using namespace bson;
 using namespace mongo;
 
+bool checkDuplicates(string& target,string* compVector);
+void parseFile(ifstream& input,DBClientConnection& c);
+void outputToFile(DBClientConnection& c);
+void scrub(DBClientConnection& c);
+
+int main(int argc,char* argv[]){
+	//check for file name
+	if (argc<2){
+		cout<<"NO FILENAME PROVIDED";
+		return 0;
+	}
+	//create object for input text file
+	ifstream input(argv[1]);
+
+	//connect to the mongo db localhost
+	DBClientConnection c;
+	c.connect("localhost");
+
+	XLog logParse("Parsing...");
+	logParse.start();
+	parseFile(input,c);
+	logParse.end();
+
+	XLog logScrub("Scrubbing...");
+	logScrub.start();
+	scrub(c);
+	logScrub.end();
+
+	XLog logOutput("Output to file...");
+	logOutput.start();
+	outputToFile(c);
+	logOutput.end();
+
+	return 0;
+}
+
+
 bool checkDuplicates(string& target,string* compVector){
 	//DES: compare a target string to each string in compVector
 	//IN: target string, array of strings
@@ -104,23 +141,28 @@ void outputToFile(DBClientConnection& c){
 	ofstream noise;
 	signal.open("signal.txt");
 	noise.open("noise.txt");
-//	20080803:10:00:00.591824,0.025407,27414383
-//	20080803:10:00:00.961882,0.025606,49029074
 
 	auto_ptr<DBClientCursor> noiseCursor =c.query("hw3.noise", Query());
+	auto_ptr<DBClientCursor> signalCursor =c.query("hw3.signal", Query());
 	//output to file
-	cout<<"starting...";
 	while (noiseCursor->more()){
-
 		BSONObj single = noiseCursor->next();
 		noise<<single.getStringField("date")<<","<<single.getField("value").Double()
-				<<","<<single.getIntField("volume")<<'\n';
+				<<","<<single.getField("volume").Int()<<'\n';
+	}
+	while (signalCursor->more()){
+		BSONObj single = signalCursor->next();
+		signal<<single.getStringField("date")<<","<<single.getField("value").Double()
+				<<","<<single.getField("volume").Int()<<'\n';
 	}
 
 }
 
 void scrub(DBClientConnection& c){
-	auto_ptr<DBClientCursor> noiseCursor[10];
+	//DES: finds and moves noise documents found in the database
+	//IN: connection to the mongo database
+
+	auto_ptr<DBClientCursor> noiseCursor[6];
 	//look for negative volume
 	noiseCursor[0] = c.query("hw3.signal", BSON("volume"<<LTE<<0.0));
 	//find excessive price (>5 dollars)
@@ -134,7 +176,8 @@ void scrub(DBClientConnection& c){
 	//find 5 pm trades
 	noiseCursor[5] = c.query("hw3.signal", Query("{date: /[0-9]{8}:17./i }"));
 
-//	noiseCursor[4] = c.query("hw3.signal", Query("{date: /[0-9]{8}:17./i }"));
+	//loop through each noise type and move the errors from the signal collection to the
+	//noise collection
 	for (int i=0;i<6;i++){
 		while (noiseCursor[i]->more()){
 			BSONObj singleNoise = noiseCursor[i]->next();
@@ -142,36 +185,6 @@ void scrub(DBClientConnection& c){
 			c.insert("hw3.noise", singleNoise);
 			//remove from signal db
 			c.remove("hw3.signal",singleNoise);
-	//		cout << cursor->next().toString() << endl;
 		}
-//		cout<<i<<" factor: "<<noiseCursor[i]->itcount()<<endl;
 	}
-}
-
-int main(int argc,char* argv[]){
-	//check for file name
-	if (argc<2){
-		cout<<"NO FILENAME PROVIDED";
-		return 0;
-	}
-	//ready objects for input-output
-	ifstream input(argv[1]);
-
-	//connect to the mongo db localhost
-	DBClientConnection c;
-	c.connect("localhost");
-
-	XLog logParse("Parsing...");
-//	parseFile(input,c);
-	logParse.end();
-
-	XLog logScrub("Scrubbing...");
-//	scrub(c);
-	logScrub.end();
-
-	XLog logOutput("Output to file...");
-	outputToFile(c);
-	logOutput.end();
-
-	return 0;
 }
