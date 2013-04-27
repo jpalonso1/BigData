@@ -7,7 +7,7 @@ paramStruct initParameters(string paramFile){
 	paramStruct tempPar;
 	//choose between external parameter from file if it exists, default otherwise
 	tempPar.NUM_SIMULATIONS= param.getLong("NUM_SIMULATIONS",700000000);
-	tempPar.NS.xBar[0]=param.getFloat("BS00",0.06);
+	tempPar.NS.xBar[0]=param.getFloat("BS00",0.60);
 	tempPar.NS.xBar[1]=param.getFloat("BS10",0.58);
 	tempPar.NS.xBar[2]=param.getFloat("BS20",1.58);
 	tempPar.NS.xBar[3]=param.getFloat("BS30",1.40);

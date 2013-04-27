@@ -15,7 +15,7 @@ const long PARTIES_NUM = 10000;
 const float BASE_HAZARD=0.02;
 
 //cash deals parameters
-const long CASH_DEALS_NUM = 100000;
+const long CASH_DEALS_NUM = 100000000;
 const long MIN_DEAL_CASH = 800000;
 const long MAX_DEAL_CASH = 1200000;
 const float PERCENT_CASH_LONG = 0.6;
@@ -27,19 +27,19 @@ const long MAX_DEAL_SWAP = 1200000;
 const float PERCENT_SWAP_LONG = 0.45;
 const double MIN_RATE_SWAP = 0.02;
 const double MAX_RATE_SWAP = 0.08;
-const int YEARS=5;
-const int SWAP_PERIODS=12*YEARS;
+const long YEARS=5;
+const long SWAP_PERIODS=12*YEARS;
 const float RATE_VARIANCE=0.2;
 const float STARTING_PRICE = 1.4;
-const int FIRST_YEAR=2;
-const int SWAP_START=FIRST_YEAR*12;
+const long FIRST_YEAR=2;
+const long SWAP_START=FIRST_YEAR*12;
 
 //asset parameters
 const float VARIANCE=0.2;
 const float DISCOUNT=0.06;
 
 //simulation parameters
-const long NUM_SIMULATIONS = 10000;
+const long NUM_SIMULATIONS = 100000;
 
 const int PROP_CUTOFF[5] = { 1, 3, 7, 15, 31 };
 

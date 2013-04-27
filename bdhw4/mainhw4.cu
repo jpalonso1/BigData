@@ -49,8 +49,19 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 	return tempCVA;
 }
 
+__host__ __device__
+inline float getNSCurve(float * BS,float t){
+	//0=beta0, 1=beta1, 2=beta2, 3=lambda
+	float tOverL=t/BS[3];
+	return BS[0]+BS[1]*BS[3]*(1-exp(-tOverL))/t+BS[2]*BS[3]*((1-exp(-tOverL))/(t-exp(-tOverL)));
+//	return b0+b1*exp(-tOverL)+b2*tOverL*exp(-tOverL);
+}
+
 struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 {
+	paramStruct pard;
+	get_CVA4(paramStruct _pard):pard(_pard){}
+
 	__host__ __device__
 	counterpartyCVA operator()(unsigned long seed)
 	{
@@ -63,8 +74,6 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		//Standard Normal distribution
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
-		//Normal distribution for siegel curve
-		thrust::random::experimental::normal_distribution<float> ndistns(DISCOUNT, 1.0f);
 
 		//initialize parameters for simulation
 		float timeStep=float(YEARS)/float(SWAP_PERIODS);
@@ -86,12 +95,21 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
 		}
 
+		//initialize nelson siegel factors
+		float NS0[4];
+		float NS1[4];
+		thrust::random::experimental::normal_distribution<float> normNS[4];
+		for (int i=0;i<4;i++){
+			NS0[i]=pard.NS.xBar[i];
+			//Normal distribution for siegel curve
+			normNS[i]=thrust::random::experimental::normal_distribution<float> (pard.NS.xBar[i], 1.0f);
+		}
+
 		float time=0;
-		//used for nelson siegel
-		float x0=DISCOUNT;
-		float x1=DISCOUNT;
-		float thisDisc=0;
+		float curveRate=0;
+		float curveRateLast=0;
 		float discount=1;
+
 		float rateSD=sqrt(RATE_VARIANCE);
 		float sqTimeStep=sqrt(timeStep);
 		float stepDisc=0;
@@ -99,34 +117,42 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		normal=ndist(rng);
 		//probability of default this and last period
 		//run the required number of steps
-//		if(seed==6)cout<<"start price: "<<price<<endl;
 		for(unsigned long i = 0; i < SWAP_PERIODS-1; ++i)
 		{
 			time=time+timeStep;
 			//get new price
 			normal=ndist(rng);
-//			if(i==1)cout<<"seed: "<<seed<<" normal 1: "<<normal<<endl;
-//			if(seed==7 && i==0)cout<<"price factor: "<<priceFactor<<endl;
 			price+=price*normal*priceFactor;
-			//generate discount for current step using nelson siegel
-			normalNS=ndistns(rng);
-//			if (seed==8)cout<<i<<",norm: "<<normalNS<<",timest: "<<timeStep<<",";
-//			x1=ALPHA*(DISCOUNT-x0)+rateSD*sqTimeStep*normalNS;
-			x0=x1;
-			stepDisc=exp(-timeStep*x1);
+
+			//update NS curve factors
+			for (int j=0;j<4;j++){
+				//generate factors for current step using nelson siegel
+				normalNS=normNS[j](rng);
+				NS1[j]=pard.NS.alpha[j]*(pard.NS.xBar[j]-NS0[j])+pard.NS.sd[j]*sqTimeStep*normalNS;
+				NS0[j]=NS1[j];
+			}
+			curveRate=getNSCurve(NS1,YEARS-time);
+			//fix nan values (in low-probability case that function explodes) assign last found value
+			if (curveRate!=curveRate)curveRate=curveRateLast;
+			//prevent values from exploding
+			else if(curveRate<0||curveRate>1)curveRate=curveRateLast;
+			curveRateLast=curveRate;
+//			if (seed==1)cout<<i<<"inside curve: "<<curveRate<<endl;
+			//override for testing
+			curveRate=0.06;
+
+			stepDisc=exp(-timeStep*curveRate);
 			discount=discount*stepDisc;
-//			if(seed==8)cout<<i<<','<<price<<','<<x1<<','<<discount<<endl;
 			//find default probability for each and copy result to output CVA struct
 			for (int j=0;j<5;j++)
 			{
 				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
-//				cout<<j<<" defprob: "<<defProb<<" discount: "<<discount<<" price: "<<price<<endl;
 				sumCVA.normalizedCashCVA[j]+=defProb*discount*price;
 				sumCVA.normalizedSwapFixedCVA[j][i]=defProb*discount;
-				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc*x1*1.0/12.0;
+				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc*curveRate*1.0/12.0;
 //				if(seed==10)cout<<i<<" j: "<<j<<","<<sumCVA.normalizedSwapFixedCVA[j][i]<<endl;
-
 			}
+//			if (seed<20)cout<<sumCVA.normalizedCashCVA[1]<<endl;
 		}
 		return sumCVA;
 	}
@@ -137,7 +163,7 @@ counterpartyCVA genPaths()
 	thrust::plus<counterpartyCVA> binary_op;
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(),cpCVA,binary_op);
+			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(parh),cpCVA,binary_op);
 	//find averages for the CVA
 	for (int i=0;i<5;i++){
 		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);
@@ -149,9 +175,13 @@ counterpartyCVA genPaths()
 	return cpCVA;
 }
 
-float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
+float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 {
-	float sumCVA=0;
+	for (int i=0;i<5;i++){
+		cout<<i<<" factor: "<<cpCVA.normalizedCashCVA[i]<<endl;
+	}
+
+
 	float cashCVA=0;
 	float floatCVA=0;
 	float fixedCVA=0;
@@ -166,30 +196,18 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 			}
 		}
 	}
-	cout<<"sum cash: "<<cashCVA<<endl;
-	cout<<"sum fixed: "<<fixedCVA<<endl;
-	cout<<"sum float: "<<floatCVA<<endl;
-	sumCVA=cashCVA+floatCVA+fixedCVA;
-	return sumCVA;
+	float avgCash=cashCVA/NUM_SIMULATIONS;
+	float avgFloat=floatCVA/NUM_SIMULATIONS;
+	float avgFixed=fixedCVA/NUM_SIMULATIONS;
+	cout<<"avg cash: "<<avgCash<<endl;
+	cout<<"avg float: "<<avgFloat<<endl;
+	cout<<"avg fixed: "<<avgFixed<<endl;
+	float avgCVA=avgCash+avgFloat+avgFixed;
+	return avgCVA;
 }
 
-inline float getNSCurve(float * BS,float t){
-	//0=beta0, 1=beta1, 2=beta2, 3=lambda
-	float tOverL=t/BS[3];
-	return BS[0]+BS[1]*BS[3]*(1-exp(-tOverL))/t+BS[2]*BS[3]*((1-exp(-tOverL))/(t-exp(-tOverL)));
-//	return b0+b1*exp(-tOverL)+b2*tOverL*exp(-tOverL);
-}
 
 int main(){
-	cout<<"Testpar: "<<parh.NUM_SIMULATIONS<<endl;
-	float BS[4];
-	BS[0]=parh.NS.xBar[0];
-	BS[1]=parh.NS.xBar[1];
-	BS[2]=parh.NS.xBar[2];
-	BS[3]=parh.NS.xBar[3];
-	for (int i=0;i<50;i++){
-		cout<<"test NS curve: "<<getNSCurve(BS,i)<<endl;
-	}
 	XLog logMain("CVA 2 Main");
 	logMain.start();
 	//break processing into groups to manage memory
@@ -213,7 +231,7 @@ int main(){
 		cout<<"test deals: "<<cp[4200].numSwaps<<endl;
 
 		XLog logSum("Aggregate CVA");
-		float totalCVA=getCumulativeCVA(cpCVA,cp,CP_PER_BATCH);
+		float totalCVA=getAverageCVA(cpCVA,cp,CP_PER_BATCH);
 		logSum.log("total CVA:",totalCVA);
 
 	}
