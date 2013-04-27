@@ -173,7 +173,14 @@ float getCumulativeCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 	return sumCVA;
 }
 
+inline float getNSCurve(float b0, float b1, float b2,float lambda, float t){
+	float tOverL=t/lambda;
+	return b0+b1*lambda*(1-exp(-tOverL))/t+b2*lambda*((1-exp(-tOverL))/(t-exp(-tOverL)));
+//	return b0+b1*exp(-tOverL)+b2*tOverL*exp(-tOverL);
+}
+
 int main(){
+	cout<<"test NS curve: "<<getNSCurve(BETA0,BETA1,BETA2,LAMBDA,49)<<endl;
 	XLog logMain("CVA 2 Main");
 	logMain.start();
 	//break processing into groups to manage memory
