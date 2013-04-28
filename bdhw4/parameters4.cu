@@ -6,7 +6,7 @@ paramStruct initParameters(string paramFile){
 
 	paramStruct tempPar;
 	//simulation steps
-	tempPar.NUM_SIMULATIONS= param.getLong("NUM_SIMULATIONS",700000000);
+	tempPar.NUM_SIMULATIONS= param.getLong("NUM_SIMULATIONS",10000);
 
 	//choose between external parameter from file if it exists, default otherwise
 	tempPar.NS.xBar[0]=param.getFloat("BS00",0.60);
@@ -39,21 +39,19 @@ paramStruct initParameters(string paramFile){
 	tempPar.PERCENT_SWAP_LONG=param.getFloat("PERCENT_SWAP_LONG",0.45);
 	tempPar.MIN_RATE_SWAP=param.getFloat("MIN_RATE_SWAP",0.02);
 	tempPar.MAX_RATE_SWAP=param.getFloat("MAX_RATE_SWAP",0.08);
-	tempPar.YEARS=param.getLong("YEARS",5);
+	tempPar.YEARS=param.getFloat("YEARS",5.0);
 
+	tempPar.SWAP_PERIODS=tempPar.YEARS*12.0;
 	tempPar.RATE_VARIANCE=param.getFloat("RATE_VARIANCE",0.2);
 	tempPar.STARTING_PRICE=param.getFloat("STARTING_PRICE",1.4);
-	tempPar.FIRST_YEAR=param.getFloat("FIRST_YEAR",2);
-	tempPar.SWAP_START=FIRST_YEAR*12;
+	tempPar.FIRST_YEAR=param.getFloat("FIRST_YEAR",2.0);
+	tempPar.SWAP_START=tempPar.FIRST_YEAR*12.0;
 
 	//asset parameters
 	tempPar.VARIANCE=param.getFloat("VARIANCE",0.2);
 	tempPar.DISCOUNT=param.getFloat("DISCOUNT",0.06);
 
 	//batch parameters
-	tempPar.iMAX_CP_GROUP=param.getLong("iMAX_CP_GROUP",100);
-	tempPar.CP_BATCHES=tempPar.PARTIES_NUM/tempPar.iMAX_CP_GROUP+
-			bool(tempPar.PARTIES_NUM%tempPar.iMAX_CP_GROUP);
-	tempPar.CP_PER_BATCH=tempPar.PARTIES_NUM/tempPar.CP_BATCHES;
+	tempPar.CP_BATCHES=tempPar.PARTIES_NUM/iMAX_CP_GROUP;
 	return tempPar;
 }

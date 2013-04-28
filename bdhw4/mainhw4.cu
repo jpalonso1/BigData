@@ -39,7 +39,7 @@ counterpartyCVA operator+(const counterpartyCVA &cvaL, const counterpartyCVA &cv
 	for(int i=0;i<5;i++)
 	{
 		tempCVA.normalizedCashCVA[i]=cvaL.normalizedCashCVA[i]+cvaR.normalizedCashCVA[i];
-		for (long j=0;j<SWAP_PERIODS;j++){
+		for (long j=0;j<MAX_PERIODS;j++){
 			tempCVA.normalizedSwapFloatCVA[i][j]=
 					cvaL.normalizedSwapFloatCVA[i][j]+cvaR.normalizedSwapFloatCVA[i][j];
 			tempCVA.normalizedSwapFixedCVA[i][j]=
@@ -75,12 +75,12 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
 		//initialize parameters for simulation
-		float timeStep=float(YEARS)/float(SWAP_PERIODS);
+		float timeStep=float(pard.YEARS)/float(pard.SWAP_PERIODS);
 		float defProb=0;
-		double price=STARTING_PRICE;
+		double price=pard.STARTING_PRICE;
 
 		//factor used in random evolution of price
-		float priceFactor=sqrt(VARIANCE)*(timeStep);
+		float priceFactor=sqrt(pard.VARIANCE)*(timeStep);
 
 		//to hold the random normal generated each step for asset
 		float normal=0;
@@ -91,7 +91,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float hazard[5];
 		for (int i=0;i<5;i++)
 		{
-			hazard[i]=BASE_HAZARD+BASE_HAZARD*float(i);
+			hazard[i]=pard.BASE_HAZARD+pard.BASE_HAZARD*float(i);
 		}
 
 		//initialize nelson siegel factors
@@ -115,12 +115,11 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		normal=ndist(rng);
 		//probability of default this and last period
 		//run the required number of steps
-		for(unsigned long i = 0; i < SWAP_PERIODS-1; ++i){
+		for(unsigned long i = 0; i < pard.SWAP_PERIODS-1; ++i){
 			time=time+timeStep;
 			//get new price
 			normal=ndist(rng);
 			price+=price*normal*priceFactor;
-
 			//update NS curve factors
 			for (int j=0;j<4;j++){
 				//generate factors for current step using nelson siegel
@@ -128,7 +127,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 				NS1[j]=pard.NS.alpha[j]*(pard.NS.xBar[j]-NS0[j])+pard.NS.sd[j]*sqTimeStep*normalNS;
 				NS0[j]=NS1[j];
 			}
-			curveRate=getNSCurve(NS1,YEARS-time);
+			curveRate=getNSCurve(NS1,pard.YEARS-time);
 			//fix nan values (in low-probability case that function explodes) assign last found value
 			if (curveRate!=curveRate)curveRate=curveRateLast;
 			//prevent values from exploding
@@ -136,7 +135,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			curveRateLast=curveRate;
 
 			//override for testing
-//			curveRate=0.06;
+			curveRate=0.06;
 
 			stepDisc=exp(-timeStep*curveRate);
 			discount=discount*stepDisc;
@@ -157,13 +156,13 @@ counterpartyCVA genPaths()
 	thrust::plus<counterpartyCVA> binary_op;
 	counterpartyCVA cpCVA;
 	cpCVA = thrust::transform_reduce(thrust::counting_iterator<int>(0),
-			thrust::counting_iterator<int>(NUM_SIMULATIONS),get_CVA4(parh),cpCVA,binary_op);
+			thrust::counting_iterator<int>(parh.NUM_SIMULATIONS),get_CVA4(parh),cpCVA,binary_op);
 	//find averages for the CVA
 	for (int i=0;i<5;i++){
-		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(NUM_SIMULATIONS);
-		for (long j=0;j<SWAP_PERIODS;j++){
-			cpCVA.normalizedSwapFixedCVA[i][j]=cpCVA.normalizedSwapFixedCVA[i][j]/float(NUM_SIMULATIONS);
-			cpCVA.normalizedSwapFloatCVA[i][j]=cpCVA.normalizedSwapFloatCVA[i][j]/float(NUM_SIMULATIONS);
+		cpCVA.normalizedCashCVA[i]=cpCVA.normalizedCashCVA[i]/float(parh.NUM_SIMULATIONS);
+		for (long j=0;j<parh.SWAP_PERIODS;j++){
+			cpCVA.normalizedSwapFixedCVA[i][j]=cpCVA.normalizedSwapFixedCVA[i][j]/float(parh.NUM_SIMULATIONS);
+			cpCVA.normalizedSwapFloatCVA[i][j]=cpCVA.normalizedSwapFloatCVA[i][j]/float(parh.NUM_SIMULATIONS);
 		}
 	}
 	return cpCVA;
@@ -179,7 +178,7 @@ float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 		long startCount = partiesFifth * j;
 		for (long i = 0; i < partiesFifth; i++) {
 			cashCVA+=cpCVA.normalizedCashCVA[j]*cp[startCount + i].netCashDeal;
-			for (long k=0;k<SWAP_PERIODS;k++){
+			for (long k=0;k<parh.SWAP_PERIODS;k++){
 				fixedCVA+=cpCVA.normalizedSwapFixedCVA[j][k]*cp[startCount+i].swapFixed[k];
 				floatCVA+=cpCVA.normalizedSwapFloatCVA[j][k]*cp[startCount+i].swapFloatNom[k];
 			}
@@ -201,22 +200,25 @@ int main(){
 	//track sum of CVA from all batches
 	float sumCVA=0;
 	//manage deal allocation
-	for (int i=0;i<CP_BATCHES;i++){
+	for (int i=0;i<parh.CP_BATCHES;i++){
 		//allocate memory for a single batch
-		counterParties cp[CP_PER_BATCH];
+		counterParties cp[iMAX_CP_GROUP];
 
 		XLog logAlloc("Setup");
+		cout<<"counterparties:"<<endl;
 		setupCounterparties(cp);
+		cout<<"deals:"<<endl;
 		allocateDeals(cp);
-		saveCP(cp,"testBin");
+		cout<<"counterparties"<<endl;
 		logAlloc.end();
 
 		XLog logTransform("Transform");
+		cout<<"Transform: "<<endl;
 		counterpartyCVA cpCVA=genPaths();
 		logTransform.end();
 
 		XLog logSum("Aggregate CVA");
-		float totalCVA=getAverageCVA(cpCVA,cp,CP_PER_BATCH);
+		float totalCVA=getAverageCVA(cpCVA,cp,iMAX_CP_GROUP);
 		sumCVA+=totalCVA;
 		logSum.log("batch CVA:",totalCVA);
 

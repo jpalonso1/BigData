@@ -42,9 +42,6 @@ float getRandomCash();
 void setRandomFixedSwap(counterParties& cp);
 float getRandomSwapMthAmount();
 
-//save counterparty array to binary file
-void saveCP(counterParties* cp,string fileName);
-
 //print details of a single counterparty
 void printCPDetails(counterParties& cp);
 

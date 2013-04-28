@@ -2,7 +2,7 @@
 
 void setupCounterparties(counterParties * cp) {
 	//DESC: initialize counterparties with predefined hazard rates
-	long partiesFifth = CP_PER_BATCH / 5;
+	long partiesFifth = iMAX_CP_GROUP / 5;
 	for (long j = 0; j < 5; j++) {
 		float thisHazard = 0.02 * (1 + j);
 		long startCount = partiesFifth * j;
@@ -14,19 +14,19 @@ void setupCounterparties(counterParties * cp) {
 
 void allocateDeals(counterParties* cp) {
 	//allocate at least one deal to each counterparty
-	for (long i = 0; i < CP_PER_BATCH; i++) {
+	for (long i = 0; i < iMAX_CP_GROUP; i++) {
 		cp[i].netCashDeal = getRandomCash();
 		setRandomFixedSwap(cp[i]);
 	}
 	//allocate the remaining deals randomly according to allocation probabilities
 	//assign cash deals randomly
-	for (long i = 0; i < (CASH_DEALS_NUM/CP_BATCHES - CP_PER_BATCH); i++) {
+	for (long i = 0; i < (parh.CASH_DEALS_NUM/parh.CP_BATCHES - iMAX_CP_GROUP); i++) {
 		long partyCashAllocated = getRandomAllocation();
 		cp[partyCashAllocated].netCashDeal += getRandomCash();
 	}
 
 	//assign swaps randomly
-	for (long i = 0; i < (SWAP_DEALS_NUM/CP_BATCHES - CP_PER_BATCH); i++) {
+	for (long i = 0; i < (parh.SWAP_DEALS_NUM/parh.CP_BATCHES - iMAX_CP_GROUP); i++) {
 		long partySwapAllocated = getRandomAllocation();
 		setRandomFixedSwap(cp[partySwapAllocated]);
 	}
@@ -38,7 +38,7 @@ long getRandomAllocation() {
 	//define the target
 	for (long i = 0; i < 5; i++) {
 		if (numAlloc < PROP_CUTOFF[i]) {
-			return ((CP_PER_BATCH / 5) * i) + rand() % (CP_PER_BATCH / 5);
+			return ((iMAX_CP_GROUP / 5) * i) + rand() % (iMAX_CP_GROUP / 5);
 		}
 	}
 	//error, no target found
@@ -52,29 +52,29 @@ long getRandomAllocation() {
 //give partial progress on excel/time estimate?
 float getRandomCash() {
 	//get absolute value of deal
-	float deal = MIN_DEAL_CASH + xfun::randomUniform() * (MAX_DEAL_CASH - MIN_DEAL_CASH);
+	float deal = parh.MIN_DEAL_CASH + xfun::randomUniform() * (parh.MAX_DEAL_CASH - parh.MIN_DEAL_CASH);
 	//adjust if short
-	if (xfun::randomUniform() > PERCENT_CASH_LONG)deal = (-deal);
+	if (xfun::randomUniform() > parh.PERCENT_CASH_LONG)deal = (-deal);
 	return deal;
 }
 
 float getRandomSwapAmount(){
 	//DES: returns a monthly fixed amount for the swap
 	//get absolute value of deal
-	long deal = MIN_DEAL_SWAP + xfun::randomUniform() * (MAX_DEAL_SWAP - MIN_DEAL_SWAP);
+	long deal = parh.MIN_DEAL_SWAP + xfun::randomUniform() * (parh.MAX_DEAL_SWAP - parh.MIN_DEAL_SWAP);
 	//adjust if eur;
-	if (xfun::randomUniform()>0.5)deal=deal/STARTING_PRICE;
+	if (xfun::randomUniform()>0.5)deal=deal/parh.STARTING_PRICE;
 	//adjust if short
-	if (xfun::randomUniform() > PERCENT_SWAP_LONG)deal = (-deal);
+	if (xfun::randomUniform() > parh.PERCENT_SWAP_LONG)deal = (-deal);
 	return deal;
 }
 
 void setRandomFixedSwap(counterParties& cp){
 	//DES: adds fixed payments up to a random month for input counterparty
-	long month=rand() %(SWAP_PERIODS-SWAP_START+1)+SWAP_START;
+	long month=rand() %(parh.SWAP_PERIODS-parh.SWAP_START+1)+parh.SWAP_START;
 	float notionalValue=getRandomSwapAmount();
 	//get fixed rate
-	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
+	float rate = parh.MIN_RATE_SWAP + xfun::randomUniform() * (parh.MAX_RATE_SWAP - parh.MIN_RATE_SWAP);
 	float fixedMonthAmt=rate*notionalValue/12.0;
 	for (long i=0;i<month;i++){
 		cp.swapFloatNom[i]+=notionalValue;
@@ -87,17 +87,10 @@ void setRandomFixedSwap(counterParties& cp){
 void writeCounterparties(counterParties* cp,string& fileName){
 }
 
-void saveCP(counterParties* cp,string fileName){
-	std::ofstream binFile;
-	binFile.open (fileName.c_str(), ios::out| ios::binary);
-	binFile.write ((char*)cp, CP_PER_BATCH*sizeof(counterParties));
-	binFile.close();
-}
-
 void prlongCPDetails(counterParties& cp){
 	cout<<cp.hazardRate<<","<<cp.netCashDeal<<","<<cp.numSwaps<<"|";
-	for (long i=0;i<SWAP_PERIODS;i++){
-		cout<<i<<','<<cp.swapFixed[i]<<','<<cp.swapFloatNom[i]*DISCOUNT/12.0<<'|'<<endl;
+	for (long i=0;i<parh.SWAP_PERIODS;i++){
+		cout<<i<<','<<cp.swapFixed[i]<<','<<cp.swapFloatNom[i]*parh.DISCOUNT/12.0<<'|'<<endl;
 	}
 	cout<<endl;
 }
