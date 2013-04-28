@@ -59,7 +59,7 @@ float getRandomCash() {
 }
 
 float getRandomSwapAmount(){
-	//FUN: returns a monthly fixed amount for the swap
+	//DES: returns a monthly fixed amount for the swap
 	//get absolute value of deal
 	long deal = MIN_DEAL_SWAP + xfun::randomUniform() * (MAX_DEAL_SWAP - MIN_DEAL_SWAP);
 	//adjust if eur;
@@ -70,15 +70,15 @@ float getRandomSwapAmount(){
 }
 
 void setRandomFixedSwap(counterParties& cp){
-	//FUN: adds fixed payments up to a random month for input counterparty
+	//DES: adds fixed payments up to a random month for input counterparty
 	long month=rand() %(SWAP_PERIODS-SWAP_START+1)+SWAP_START;
 	float notionalValue=getRandomSwapAmount();
 	//get fixed rate
 	float rate = MIN_RATE_SWAP + xfun::randomUniform() * (MAX_RATE_SWAP - MIN_RATE_SWAP);
 	float fixedMonthAmt=rate*notionalValue/12.0;
 	for (long i=0;i<month;i++){
-		cp.swapFixed[i]+=fixedMonthAmt;
 		cp.swapFloatNom[i]+=notionalValue;
+		cp.swapFixed[i]+=fixedMonthAmt;
 	}
 	//track total number of swaps for specific cp
 	cp.numSwaps++;

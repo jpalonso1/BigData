@@ -14,15 +14,15 @@ struct counterParties {
 	double hazardRate;
 	double netCashDeal;
 	//one element for each month
-	double swapFixed[SWAP_PERIODS];
-	double swapFloatNom[SWAP_PERIODS];
+	double swapFixed[MAX_PERIODS];
+	double swapFloatNom[MAX_PERIODS];
 	long numSwaps;
 	counterParties()
 	{
 		hazardRate=0;
 		netCashDeal=0;
 		numSwaps=0;
-		for (long i=0;i<SWAP_PERIODS;i++){
+		for (long i=0;i<MAX_PERIODS;i++){
 			swapFixed[i]=0;
 			swapFloatNom[i]=0;
 		}

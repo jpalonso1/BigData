@@ -15,15 +15,15 @@ using namespace std;
 struct counterpartyCVA
 {
 	float normalizedCashCVA[5];
-	float normalizedSwapFloatCVA[5][SWAP_PERIODS];
-	float normalizedSwapFixedCVA[5][SWAP_PERIODS];
+	float normalizedSwapFloatCVA[5][MAX_PERIODS];
+	float normalizedSwapFixedCVA[5][MAX_PERIODS];
 	//intialize counterparties and set to 0
 	__host__ __device__
 	counterpartyCVA()
 	{
 		for (int i=0;i<5;i++){
 			normalizedCashCVA[i]=0;
-			for (long j=0;j<SWAP_PERIODS;j++){
+			for (long j=0;j<MAX_PERIODS;j++){
 				normalizedSwapFloatCVA[i][j]=0;
 				normalizedSwapFixedCVA[i][j]=0;
 			}
@@ -74,7 +74,6 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		//Standard Normal distribution
 		thrust::random::experimental::normal_distribution<float> ndist(0, 1.0f);
 
-
 		//initialize parameters for simulation
 		float timeStep=float(YEARS)/float(SWAP_PERIODS);
 		float defProb=0;
@@ -110,15 +109,13 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 		float curveRateLast=0;
 		float discount=1;
 
-		float rateSD=sqrt(RATE_VARIANCE);
 		float sqTimeStep=sqrt(timeStep);
 		float stepDisc=0;
 		//eliminate first random number
 		normal=ndist(rng);
 		//probability of default this and last period
 		//run the required number of steps
-		for(unsigned long i = 0; i < SWAP_PERIODS-1; ++i)
-		{
+		for(unsigned long i = 0; i < SWAP_PERIODS-1; ++i){
 			time=time+timeStep;
 			//get new price
 			normal=ndist(rng);
@@ -137,22 +134,18 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			//prevent values from exploding
 			else if(curveRate<0||curveRate>1)curveRate=curveRateLast;
 			curveRateLast=curveRate;
-//			if (seed==1)cout<<i<<"inside curve: "<<curveRate<<endl;
 			//override for testing
-			curveRate=0.06;
+//			curveRate=0.06;
 
 			stepDisc=exp(-timeStep*curveRate);
 			discount=discount*stepDisc;
 			//find default probability for each and copy result to output CVA struct
-			for (int j=0;j<5;j++)
-			{
+			for (int j=0;j<5;j++){
 				defProb=1.0f/exp((time-timeStep)*hazard[j])-1.0f/exp(time*hazard[j]);
 				sumCVA.normalizedCashCVA[j]+=defProb*discount*price;
-				sumCVA.normalizedSwapFixedCVA[j][i]=defProb*discount;
+				sumCVA.normalizedSwapFixedCVA[j][i]=-defProb*discount;
 				sumCVA.normalizedSwapFloatCVA[j][i]=defProb*stepDisc*curveRate*1.0/12.0;
-//				if(seed==10)cout<<i<<" j: "<<j<<","<<sumCVA.normalizedSwapFixedCVA[j][i]<<endl;
 			}
-//			if (seed<20)cout<<sumCVA.normalizedCashCVA[1]<<endl;
 		}
 		return sumCVA;
 	}
@@ -177,10 +170,6 @@ counterpartyCVA genPaths()
 
 float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 {
-	for (int i=0;i<5;i++){
-		cout<<i<<" factor: "<<cpCVA.normalizedCashCVA[i]<<endl;
-	}
-
 	float cashCVA=0;
 	float floatCVA=0;
 	float fixedCVA=0;
@@ -196,12 +185,8 @@ float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 		}
 	}
 	cout<<"total cash: "<<cashCVA<<endl;
-//	float avgCash=cashCVA/(size/5);
-//	float avgFloat=floatCVA/(size/5);
-//	float avgFixed=fixedCVA/(size/5);
-//	cout<<"avg cash: "<<avgCash<<endl;
-//	cout<<"avg float: "<<avgFloat<<endl;
-//	cout<<"avg fixed: "<<avgFixed<<endl;
+	cout<<"total float: "<<floatCVA<<endl;
+	cout<<"total fixed: "<<fixedCVA<<endl;
 	return cashCVA+floatCVA+fixedCVA;
 }
 
@@ -211,7 +196,7 @@ int main(){
 	logMain.start();
 	//break processing into groups to manage memory
 //	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
-	cout<<"batches: "<<CP_BATCHES<<endl;
+	cout<<"batches: "<<parh.CP_BATCHES<<endl;
 	//track sum of CVA from all batches
 	float sumCVA=0;
 	//manage deal allocation
@@ -228,8 +213,6 @@ int main(){
 		XLog logTransform("Transform");
 		counterpartyCVA cpCVA=genPaths();
 		logTransform.end();
-
-		cout<<"test deals: "<<cp[4200].numSwaps<<endl;
 
 		XLog logSum("Aggregate CVA");
 		float totalCVA=getAverageCVA(cpCVA,cp,CP_PER_BATCH);
