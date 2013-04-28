@@ -21,7 +21,7 @@ bool XParams::seekValue(const string& par, string & out)const {
 	return false;
 }
 
-int XParams::getLong(const string par, long def)const{
+long XParams::getLong(const string par, long def)const{
 	string temp;
 	if (seekValue(par,temp))return atol(temp.c_str());
 	else return def;

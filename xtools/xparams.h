@@ -18,7 +18,7 @@ public:
 	XParams(const char* paramPath);
 	virtual ~XParams();
 	//take a parameter name and a default value as argument
-	int getLong(const string par, long def)const;
+	long getLong(const string par, long def)const;
 	float getFloat(const string par, float def)const;
 	string getString(const string par, string def)const;
 
