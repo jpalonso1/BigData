@@ -3,7 +3,6 @@
 
 #include "parameters4.h"
 #include "setup4.h"
-#include "xlog.h"
 
 #include <thrust/random.h>
 #include <thrust/transform.h>
@@ -184,16 +183,11 @@ float getAverageCVA(counterpartyCVA& cpCVA,counterParties* cp,long size)
 			}
 		}
 	}
-	cout<<"total cash: "<<cashCVA<<endl;
-	cout<<"total float: "<<floatCVA<<endl;
-	cout<<"total fixed: "<<fixedCVA<<endl;
 	return cashCVA+floatCVA+fixedCVA;
 }
 
 
 int main(){
-	XLog logMain("CVA 2 Main");
-	logMain.start();
 	//break processing into groups to manage memory
 //	const long cpBatches=PARTIES_NUM/iMAX_CP_GROUP+bool(PARTIES_NUM%iMAX_CP_GROUP);
 	cout<<"batches: "<<parh.CP_BATCHES<<endl;
@@ -204,26 +198,15 @@ int main(){
 		//allocate memory for a single batch
 		counterParties cp[iMAX_CP_GROUP];
 
-		XLog logAlloc("Setup");
-		cout<<"counterparties:"<<endl;
 		setupCounterparties(cp);
-		cout<<"deals:"<<endl;
 		allocateDeals(cp);
-		cout<<"counterparties"<<endl;
-		logAlloc.end();
 
-		XLog logTransform("Transform");
-		cout<<"Transform: "<<endl;
 		counterpartyCVA cpCVA=genPaths();
-		logTransform.end();
 
-		XLog logSum("Aggregate CVA");
 		float totalCVA=getAverageCVA(cpCVA,cp,iMAX_CP_GROUP);
 		sumCVA+=totalCVA;
-		logSum.log("batch CVA:",totalCVA);
-
+		cout<<i<<" batch CVA: "<<totalCVA<<endl;
 	}
-	logMain.log("total CVA:",sumCVA);
-	logMain.end();
+	cout<<"total CVA: "<<sumCVA<<endl;
 	return 0;
 }
