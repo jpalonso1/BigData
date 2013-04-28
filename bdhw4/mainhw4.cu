@@ -134,6 +134,7 @@ struct get_CVA4 : public thrust::unary_function<unsigned int,counterpartyCVA>
 			//prevent values from exploding
 			else if(curveRate<0||curveRate>1)curveRate=curveRateLast;
 			curveRateLast=curveRate;
+
 			//override for testing
 //			curveRate=0.06;
 

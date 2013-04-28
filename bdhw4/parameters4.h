@@ -16,13 +16,13 @@ const long PARTIES_NUM = 10000;
 const float BASE_HAZARD=0.02;
 
 //cash deals parameters
-const long CASH_DEALS_NUM = 2000000;
+const long CASH_DEALS_NUM = 100000000;
 const long MIN_DEAL_CASH = 800000;
 const long MAX_DEAL_CASH = 1200000;
 const float PERCENT_CASH_LONG = 0.6;
 
 //swap parameters
-const long SWAP_DEALS_NUM=250000;
+const long SWAP_DEALS_NUM=200000;
 const long MIN_DEAL_SWAP = 800000;
 const long MAX_DEAL_SWAP = 1200000;
 const float PERCENT_SWAP_LONG = 0.45;

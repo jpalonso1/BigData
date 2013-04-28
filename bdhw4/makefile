@@ -6,7 +6,7 @@ INCLUDES=-I. -I$(XTOOLSDIR)
 CXX = nvcc
 CXXFLAGS = $(INCLUDES) 
 
-SRC=parameters4.cu mainhw4.cu ../xtools/xfun.cpp ../xtools/xlog.cpp setup4.cu
+SRC=parameters4.cu mainhw4.cu ../xtools/xparams.cpp ../xtools/xfun.cpp ../xtools/xlog.cpp setup4.cu
 
 EXEC=cva2
 
